@@ -24,6 +24,20 @@ class ServeState(BaseState):
     def enter(self, pong) -> None:
         self.pong = pong
 
+    def update(self, dt: float) -> None:
+        pong = self.pong
+
+        if pong.player1.is_ai and pong.player2.is_ai:
+            pong.ball.vx = random.randint(140, 199)
+
+            if pong.serving_player == 2:
+                pong.ball.vx *= -1
+
+            pong.ball.vy = random.randint(-50, 49)
+            
+            self.state_machine.change("play", pong=pong)
+            
+
     def render(self, surface: pygame.Surface) -> None:
         render_table(surface, self.pong)
         render_text(

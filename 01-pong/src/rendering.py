@@ -52,3 +52,24 @@ def render_table(surface: pygame.Surface, pong) -> None:
         settings.COLOR_WHITE,
         center=True,
     )
+
+    if pong.player1.is_ai:
+        render_text(
+            surface,
+            "AI",
+            settings.FONTS["large"],
+            settings.VIRTUAL_WIDTH / 2 - 50,
+            settings.VIRTUAL_HEIGHT / 16,
+            settings.COLOR_WHITE,
+            center=True,
+        )
+    if pong.player2.is_ai:
+        render_text(
+            surface,
+            "AI",
+            settings.FONTS["large"],
+            settings.VIRTUAL_WIDTH / 2 + 50,
+            settings.VIRTUAL_HEIGHT / 16,
+            settings.COLOR_WHITE,
+            center=True,
+        )
