@@ -25,8 +25,8 @@ class PlayState(BaseState):
 
     def update(self, dt: float) -> None:
         pong = self.pong
-        pong.player1.update(dt)
-        pong.player2.update(dt)
+        pong.player1.update(dt, pong.ball)
+        pong.player2.update(dt, pong.ball)
         pong.ball.update(dt)
 
         ball_rect = pong.ball.get_rect()
@@ -39,11 +39,11 @@ class PlayState(BaseState):
             self._score(scorer=2)
             return
 
-        if ball_rect.top <= 0:
+        if ball_rect.top <= 0 and pong.ball.vy < 0:
             settings.SOUNDS["wall_hit"].play()
             pong.ball.y = 0
             pong.ball.vy *= -1
-        elif ball_rect.bottom >= settings.VIRTUAL_HEIGHT:
+        elif ball_rect.bottom >= settings.VIRTUAL_HEIGHT and pong.ball.vy > 0:
             settings.SOUNDS["wall_hit"].play()
             pong.ball.y = settings.VIRTUAL_HEIGHT - pong.ball.height
             pong.ball.vy *= -1
@@ -103,7 +103,7 @@ class PlayState(BaseState):
     def on_input(self, input_id: str, input_data: InputData) -> None:
         pong = self.pong
 
-        if input_id in ("p1_up", "p1_down"):
+        if input_id in ("p1_up", "p1_down") and not pong.player1.is_ai:
             if input_data.pressed:
                 pong.player1.vy = (
                     -settings.PADDLE_SPEED if input_id == "p1_up" else settings.PADDLE_SPEED
@@ -112,7 +112,7 @@ class PlayState(BaseState):
                 sign = -1 if input_id == "p1_up" else 1
                 if pong.player1.vy == sign * settings.PADDLE_SPEED:
                     pong.player1.vy = 0
-        elif input_id in ("p2_up", "p2_down"):
+        elif input_id in ("p2_up", "p2_down") and not pong.player2.is_ai:
             if input_data.pressed:
                 pong.player2.vy = (
                     -settings.PADDLE_SPEED if input_id == "p2_up" else settings.PADDLE_SPEED
