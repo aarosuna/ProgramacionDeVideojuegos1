@@ -26,7 +26,8 @@ class World:
         self.background_x: float = 0.0
         self.ground_x: float = 0.0
         self.logs: List[LogPair] = []
-        self.logs_spawn_timer: float = 0.0
+        self.logs_spawn_timer: float = 1.5
+        self.time_to_next_spawn : float = random.uniform(1.5, 2.0)
         self.last_log_y: float = -settings.LOG_HEIGHT + random.randint(0, 80) + 20
         self.log_pair_factory: Factory = Factory(LogPair)
 
@@ -46,17 +47,24 @@ class World:
         if self.generate_logs:
             self.logs_spawn_timer += dt
 
-            if self.logs_spawn_timer >= settings.TIME_TO_SPAWN_LOGS:
+            if self.logs_spawn_timer >= self.time_to_next_spawn:
                 self.logs_spawn_timer = 0.0
+                self.time_to_next_spawn = random.uniform(1.5, 2.0)
+                gap_size = random.randint(85, 130)
+
+                is_moving = random.random() < 0.3
+
+                max_y_shift = int(25 * (self.time_to_next_spawn / 1.5))
+
                 y = max(
                     -settings.LOG_HEIGHT + 10,
                     min(
-                        self.last_log_y + random.randint(-20, 20),
-                        settings.VIRTUAL_HEIGHT + 90 - settings.LOG_HEIGHT,
+                        self.last_log_y + random.randint(-max_y_shift, max_y_shift),
+                        settings.VIRTUAL_HEIGHT + gap_size - settings.LOG_HEIGHT - 30,
                     ),
                 )
                 self.last_log_y = y
-                self.logs.append(self.log_pair_factory.create(settings.VIRTUAL_WIDTH, y))
+                self.logs.append(self.log_pair_factory.create(settings.VIRTUAL_WIDTH, y, {"gap_size": gap_size, "is_moving": is_moving}))
 
         self.background_x += -settings.BACK_SCROLL_SPEED * dt
 

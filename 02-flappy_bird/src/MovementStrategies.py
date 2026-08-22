@@ -1,0 +1,38 @@
+import pygame
+import settings
+
+class NormalMovement:
+    def update(self, bird, dt: float) -> None:
+
+        bird.vy += settings.GRAVITY * dt
+
+        if bird.jumping:
+            settings.SOUNDS["jump"].play()
+            bird.vy = -settings.JUMP_TAKEOFF_SPEED
+            bird.jumping = False
+
+        bird.y += bird.vy * dt
+
+class HardMovement:
+    def update(self, bird, dt: float) -> None:
+        # 1. Movimiento vertical (idéntico al normal)
+        bird.vy += settings.GRAVITY * dt
+
+        if bird.jumping:
+            settings.SOUNDS["jump"].play()
+            bird.vy = -settings.JUMP_TAKEOFF_SPEED
+            bird.jumping = False
+
+        bird.y += bird.vy * dt
+
+        # 2. Movimiento horizontal continuo (las teclas A y D, o las flechas)
+        keys = pygame.key.get_pressed()
+        move_speed = 150  # Puedes ajustar esta velocidad
+        
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            bird.x -= move_speed * dt
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            bird.x += move_speed * dt
+
+        # 3. Restricción para que el pájaro no salga de la pantalla
+        bird.x = max(0, min(bird.x, settings.VIRTUAL_WIDTH - bird.width))

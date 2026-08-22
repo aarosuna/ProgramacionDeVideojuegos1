@@ -84,5 +84,5 @@ class TitleState(BaseState):
                     self.pong.player1.is_ai = True
                     self.pong.player2.is_ai = True
 
-                #self.pong.serving_player = random.randint(1, 2)
+                self.pong.serving_player = random.randint(1, 2)
                 self.state_machine.change("serve", pong=self.pong)

@@ -14,12 +14,13 @@ import settings
 
 
 class Bird:
-    def __init__(self, x: float, y: float, width: float, height: float) -> None:
+    def __init__(self, x: float, y: float, width: float, height: float, movement_strategy) -> None:
         self.x: float = x
         self.y: float = y
         self.width: float = width
         self.height: float = height
         self.vy: float = 0.0
+        self.movement_strategy = movement_strategy
         self.jumping: bool = False
 
     def get_rect(self) -> pygame.Rect:
@@ -29,14 +30,7 @@ class Bird:
         self.jumping = True
 
     def update(self, dt: float) -> None:
-        self.vy += settings.GRAVITY * dt
-
-        if self.jumping:
-            settings.SOUNDS["jump"].play()
-            self.vy = -settings.JUMP_TAKEOFF_SPEED
-            self.jumping = False
-
-        self.y += self.vy * dt
+        self.movement_strategy.update(self, dt)
 
     def render(self, surface: pygame.Surface) -> None:
         surface.blit(settings.TEXTURES["bird"], self.get_rect())

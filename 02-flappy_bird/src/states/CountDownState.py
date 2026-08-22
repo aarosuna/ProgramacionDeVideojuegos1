@@ -15,13 +15,23 @@ from gale.text import render_text
 
 import settings
 from src.World import World
-
+from src.Bird import Bird
 
 class CountDownState(BaseState):
-    def enter(self) -> None:
-        self.world = World(generate_logs=False)
+    def enter(self, mode: str = "normal", world: World = None, bird: Bird = None, score: int = 0) -> None:
+
+        if world is not None:
+            self.world = world
+        else:
+            self.world = World(generate_logs=False)
+
+        self.bird = bird
+        self.score = score
+        self.mode = mode
+
         self.counter = 3
         self.timer = 0.0
+
 
     def update(self, dt: float) -> None:
         self.timer += dt
@@ -31,13 +41,15 @@ class CountDownState(BaseState):
             self.counter -= 1
 
             if self.counter == 0:
-                self.state_machine.change("playing", world=self.world)
+                self.state_machine.change("playing", world=self.world, bird=self.bird, score=self.score, mode=self.mode)
                 return
-
-        self.world.update(dt)
+        if self.bird is None:
+            self.world.update(dt)
 
     def render(self, surface: pygame.Surface) -> None:
         self.world.render(surface)
+        if self.bird is not None:
+            self.bird.render(surface)   
         render_text(
             surface,
             str(self.counter),
