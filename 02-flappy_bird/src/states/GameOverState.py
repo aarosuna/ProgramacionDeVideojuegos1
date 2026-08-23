@@ -27,8 +27,7 @@ class GameOverState(BaseState):
     
         if self.world is not None:
             self.world.render(surface)
-        if self.bird is not None:
-            self.bird.render(surface)
+     
             
         render_text(
             surface,
