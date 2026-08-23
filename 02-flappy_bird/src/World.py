@@ -56,22 +56,24 @@ class World:
             self.powerup_timer += dt
 
             if self.powerup_timer > 10.0:
-                self.powerup_timer = 0.0
-                if self.mode == "hard" and random.random() < 1.0:
-                    valid_spawn = False
-                    attempts = 0
-                    py = 0
-                    while not valid_spawn and attempts < 10:
-                        py = random.randint(50, settings.VIRTUAL_HEIGHT - 100)
-                        temp_rect = pygame.Rect(settings.VIRTUAL_WIDTH, py, 39, 28)
+                time_to_next = self.time_to_next_spawn - self.logs_spawn_timer
+                if self.logs_spawn_timer > 0.6 and time_to_next > 0.6:
+                    self.powerup_timer = 0.0
+                    if self.mode == "hard" and random.random() < 1.0:
+                        valid_spawn = False
+                        attempts = 0
+                        py = 0
+                        while not valid_spawn and attempts < 10:
+                            py = random.randint(50, settings.VIRTUAL_HEIGHT - 100)
+                            temp_rect = pygame.Rect(settings.VIRTUAL_WIDTH, py, 39, 28)
 
-                        collision = any(log_pair.collides(temp_rect) for log_pair in self.logs)
-                        if not collision:
-                            valid_spawn = True
+                            collision = any(log_pair.collides(temp_rect) for log_pair in self.logs)
+                            if not collision:
+                                valid_spawn = True
 
-                        attempts += 1
-                    if valid_spawn:
-                        self.powerups.append(self.powerup_factory.create(settings.VIRTUAL_WIDTH, py))
+                            attempts += 1
+                        if valid_spawn:
+                            self.powerups.append(self.powerup_factory.create(settings.VIRTUAL_WIDTH, py))
 
             if self.logs_spawn_timer >= self.time_to_next_spawn:
                 self.logs_spawn_timer = 0.0

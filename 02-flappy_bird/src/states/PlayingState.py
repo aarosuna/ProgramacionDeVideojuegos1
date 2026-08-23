@@ -23,16 +23,16 @@ from src.World import World
 from src.MovementStrategies import NormalMovement, HardMovement
 
 class PlayingState(BaseState):
-    def enter(self, world: Optional[World] = None, bird: Optional[Bird] = None, score: int = 0, mode: str = "normal") -> None:
+    def enter(self, world: Optional[World] = None, bird: Optional[Bird] = None, score: int = 0, mode: str = "normal", ghost_timer: float = 0.0) -> None:
         self.world = world if world is not None else World()
         self.mode = mode
-        self.ghost_timer = 0.0
 
         if bird is not None:
             self.bird = bird
             self.score = score
+            self.ghost_timer = ghost_timer
         else:
-
+            self.ghost_timer = 0.0
             self.world.reset(True, self.mode)
 
             if self.mode == "normal":
@@ -53,29 +53,36 @@ class PlayingState(BaseState):
         self.bird.update(dt)
         self.world.update(dt)
 
-        if self.ghost_timer > 0:
+        if getattr(self.bird, 'is_ghost', False):
             self.ghost_timer -= dt
-            if self.ghost_timer > 1.5 and self.ghost_timer <= 1.8:
+    
+            if 0 < self.ghost_timer <= 2.0 and not getattr(self, 'warning_played', False):
                 settings.SOUNDS["finished_power_up"].play()
+                self.warning_played = True
+                
             if self.ghost_timer <= 0:
                 self.bird.is_ghost = False
                 settings.SOUNDS["finish_power_up"].play()
+                settings.SOUNDS["back_power_up"].stop()
+                pygame.mixer.music.unpause()
+              
 
         for p in self.world.powerups:
             if p.collides(self.bird.get_rect()):
                 p.to_remove = True 
                 self.bird.is_ghost = True
                 self.ghost_timer = 7.0
+                self.warning_played = False
                 settings.SOUNDS["power_up"].play()
-               
+                pygame.mixer.music.pause()
+                settings.SOUNDS["back_power_up"].play(loops=-1)
 
-        if not self.bird.is_ghost and self.world.collides(self.bird.get_rect()):
-            settings.SOUNDS["explosion"].play()       
-
-        if self.world.collides(self.bird.get_rect(), self.bird.is_ghost):
+        if self.world.collides(self.bird.get_rect(), getattr(self.bird, 'is_ghost', False)):
             settings.SOUNDS["explosion"].play()
             settings.SOUNDS["hurt"].play()
-            self.state_machine.change("count_down", mode=self.mode)
+            settings.SOUNDS["back_power_up"].stop()
+            pygame.mixer.music.unpause()
+            self.state_machine.change("game_over", score=self.score, world=self.world, bird=self.bird)
             return
 
         if self.world.update_scored(self.bird.get_rect()):
@@ -100,5 +107,4 @@ class PlayingState(BaseState):
             self.bird.jump()
 
         elif input_id == "pause" and input_data.pressed:
-            pygame.mixer.music.pause()
-            self.state_machine.change("pause", mode=self.mode, world=self.world, bird=self.bird, score=self.score)
+            self.state_machine.change("pause", mode=self.mode, world=self.world, bird=self.bird, score=self.score, ghost_timer=self.ghost_timer)

@@ -24,9 +24,12 @@ class FlappyBird(Game):
         self.state_machine = StateMachine(
             {
                 "title": states.TitleScreenState,
+                "mode_selection": states.ModeSelectionState,
                 "count_down": states.CountDownState,
                 "playing": states.PlayingState,
                 "pause": states.PauseState,
+                "game_over": states.GameOverState
+
             }
         )
         self.state_machine.change("title")

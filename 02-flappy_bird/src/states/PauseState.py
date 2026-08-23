@@ -5,12 +5,17 @@ from gale.text import render_text
 import settings
 
 class PauseState(BaseState):
-    def enter(self, mode, world, bird, score) -> None:
+    def enter(self, mode, world, bird, score, ghost_timer=0.0) -> None:
         self.world = world
         self.bird = bird
         self.score = score
+        self.ghost_timer = ghost_timer
         self.mode = mode
-        pygame.mixer.music.pause()
+
+        if getattr(self.bird, 'is_ghost', False):
+            pygame.mixer.pause()
+        else:
+            pygame.mixer.music.pause()
 
     def render(self, surface: pygame.Surface) -> None:
         self.world.render(surface)
@@ -29,5 +34,8 @@ class PauseState(BaseState):
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "pause" and input_data.pressed:
-            pygame.mixer.music.unpause()
-            self.state_machine.change("count_down", mode=self.mode, world=self.world, bird=self.bird, score=self.score)
+            if getattr(self.bird, 'is_ghost', False):
+                pygame.mixer.unpause()
+            else:
+                pygame.mixer.music.unpause()    
+            self.state_machine.change("count_down", mode=self.mode, world=self.world, bird=self.bird, score=self.score, ghost_timer=self.ghost_timer)
