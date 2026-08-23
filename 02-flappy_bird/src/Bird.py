@@ -22,6 +22,7 @@ class Bird:
         self.vy: float = 0.0
         self.movement_strategy = movement_strategy
         self.jumping: bool = False
+        self.is_ghost: bool = False
 
     def get_rect(self) -> pygame.Rect:
         return pygame.Rect(round(self.x), round(self.y), self.width, self.height)
@@ -33,4 +34,5 @@ class Bird:
         self.movement_strategy.update(self, dt)
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.blit(settings.TEXTURES["bird"], self.get_rect())
+        texture_key = "bird_ghost" if self.is_ghost else "bird"
+        surface.blit(settings.TEXTURES[texture_key], self.get_rect())

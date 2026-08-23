@@ -60,8 +60,10 @@ BASE_DIR = Path(__file__).parent
 
 TEXTURES = {
     "bird": pygame.image.load(BASE_DIR / "assets" / "graphics" / "bird.png"),
+    "bird_ghost": pygame.image.load(BASE_DIR / "assets" / "graphics" / "bird_ghost.png"),
     "background": pygame.image.load(BASE_DIR / "assets" / "graphics" / "background.png"),
     "ground": pygame.image.load(BASE_DIR / "assets" / "graphics" / "ground.png"),
+    "power_up": pygame.image.load(BASE_DIR / "assets" / "graphics" / "power_up.png"),
     "log": pygame.image.load(BASE_DIR / "assets" / "graphics" / "log.png"),
 }
 # The top log of every pair is the same image, flipped upside down.
@@ -72,6 +74,9 @@ SOUNDS = {
     "explosion": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "explosion.wav"),
     "hurt": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "hurt.wav"),
     "score": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "score.wav"),
+    "power_up": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "power_up.wav"),
+    "finish_power_up": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "finish_power_up.wav"),
+    "finished_power_up": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "finished_power_up.wav"),
 }
 
 pygame.mixer.music.load(BASE_DIR / "assets" / "sounds" / "marios_way.ogg")

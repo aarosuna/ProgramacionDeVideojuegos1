@@ -23,7 +23,7 @@ class CountDownState(BaseState):
         if world is not None:
             self.world = world
         else:
-            self.world = World(generate_logs=False)
+            self.world = World(generate_logs=False, mode=mode)
 
         self.bird = bird
         self.score = score
