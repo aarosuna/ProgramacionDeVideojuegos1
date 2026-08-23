@@ -82,8 +82,13 @@ class World:
 
                 if self.mode == "hard":
                     is_moving = random.random() < 0.3
+                    if is_moving:
+                        is_symmetrical = random.random() < 0.5
+                    else:
+                        is_symmetrical = False
                 else:
-                    is_moving = False    
+                    is_moving = False
+                    is_symmetrical = False    
 
                 max_y_shift = int(25 * (self.time_to_next_spawn / 1.5))
 
@@ -95,7 +100,7 @@ class World:
                     ),
                 )
                 self.last_log_y = y
-                self.logs.append(self.log_pair_factory.create(settings.VIRTUAL_WIDTH, y, {"gap_size": gap_size, "is_moving": is_moving}))
+                self.logs.append(self.log_pair_factory.create(settings.VIRTUAL_WIDTH, y, {"gap_size": gap_size, "is_moving": is_moving, "is_symmetrical": is_symmetrical}))
 
         self.background_x += -settings.BACK_SCROLL_SPEED * dt
 

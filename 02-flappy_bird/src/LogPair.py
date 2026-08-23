@@ -16,15 +16,16 @@ import settings
 
 
 class LogPair:
-    def __init__(self, x: float, y: float, gap_size: float = 90, is_moving: bool = True) -> None:
+    def __init__(self, x: float, y: float, gap_size: float = 90, is_moving: bool = True, is_symmetrical: bool = True) -> None:
         self.x: float = x
         self.y: float = y
         self.scored: bool = False
         self.gap_size: float = gap_size
         self.is_moving: bool = is_moving
+        self.is_symmetrical: bool = is_symmetrical
         self.gap_direction: int = 1
-        self.gap_speed: float = 20.0
-        self.min_gap: float = max(60, gap_size - 20)
+        self.gap_speed: float = 40.0
+        self.min_gap: float = max(60, gap_size - 25)
         self.max_gap: float = gap_size + 20
 
     def get_top_rect(self) -> pygame.Rect:
@@ -45,7 +46,12 @@ class LogPair:
         self.x += -settings.MAIN_SCROLL_SPEED * dt
 
         if self.is_moving:
-            self.gap_size += self.gap_direction * self.gap_speed * dt
+
+            delta = self.gap_direction * self.gap_speed * dt
+            self.gap_size += delta
+
+            if self.is_symmetrical:
+                self.y -= delta / 2
 
             if self.gap_size >= self.max_gap:
                 self.gap_size = self.max_gap
