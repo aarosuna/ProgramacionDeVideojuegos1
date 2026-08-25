@@ -71,3 +71,4 @@ To implement these new features, the game's state machine was heavily updated.
   * Executes specific logic depending on the selected game mode.
   * Manages power-up spawning and collection.
   * Handles transitions to both the `PauseState` and the new `GameOverState`.
+  

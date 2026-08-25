@@ -22,7 +22,7 @@ class ModeSelectionState(BaseState):
         
         render_text(
             surface,
-            "Elige un Modo",
+            "Choose a mode",
             settings.FONTS["flappy"],
             settings.VIRTUAL_WIDTH / 2,
             settings.VIRTUAL_HEIGHT / 3,
