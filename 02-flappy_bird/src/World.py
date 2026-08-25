@@ -55,7 +55,7 @@ class World:
             self.logs_spawn_timer += dt
             self.powerup_timer += dt
 
-            if self.powerup_timer > 10.0:
+            if self.powerup_timer > 15.0:
                 time_to_next = self.time_to_next_spawn - self.logs_spawn_timer
                 if self.logs_spawn_timer > 0.6 and time_to_next > 0.6:
                     self.powerup_timer = 0.0

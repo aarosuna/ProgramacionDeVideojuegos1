@@ -15,9 +15,9 @@ class GameOverState(BaseState):
         self.selected_option = 0
         
         self.options = [
-            "1. Jugar de nuevo ",
-            "2. Cambiar Modo",
-            "3. Salir al Menu"
+            "1. Play again ",
+            "2. Choose Mode",
+            "3. Exit to Menu"
         ]
 
     def update(self, dt: float) -> None:
@@ -42,7 +42,7 @@ class GameOverState(BaseState):
         
         render_text(
             surface,
-            f"Puntuacion final: {self.score}",
+            f"Final score: {self.score}",
             settings.FONTS["medium"],
             settings.VIRTUAL_WIDTH / 2,
             settings.VIRTUAL_HEIGHT / 4 + 40,
