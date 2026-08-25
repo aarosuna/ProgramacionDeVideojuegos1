@@ -78,6 +78,7 @@ SOUNDS = {
     "finish_power_up": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "finish_power_up.wav"),
     "finished_power_up": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "finished_power_up.wav"),
     "back_power_up": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "back_power_up.wav"),
+    "log_close": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "log_close.mp3"),
 }
 
 pygame.mixer.music.load(BASE_DIR / "assets" / "sounds" / "marios_way.ogg")

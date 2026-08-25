@@ -24,8 +24,8 @@ class LogPair:
         self.is_moving: bool = is_moving
         self.is_symmetrical: bool = is_symmetrical
         self.gap_direction: int = 1
-        self.gap_speed: float = 40.0
-        self.min_gap: float = max(60, gap_size - 25)
+        self.gap_speed: float = 80.0
+        self.min_gap: float = 0.0
         self.max_gap: float = gap_size + 20
 
     def get_top_rect(self) -> pygame.Rect:
@@ -50,8 +50,7 @@ class LogPair:
             delta = self.gap_direction * self.gap_speed * dt
             self.gap_size += delta
 
-            if self.is_symmetrical:
-                self.y -= delta / 2
+            self.y -= delta / 2
 
             if self.gap_size >= self.max_gap:
                 self.gap_size = self.max_gap
@@ -59,6 +58,10 @@ class LogPair:
             elif self.gap_size <= self.min_gap:
                 self.gap_size = self.min_gap
                 self.gap_direction = 1
+
+                if "log_close" in settings.SOUNDS:
+                    settings.SOUNDS["log_close"].stop()
+                    settings.SOUNDS["log_close"].play()
 
     def is_out_of_game(self) -> bool:
         return self.x < -settings.LOG_WIDTH

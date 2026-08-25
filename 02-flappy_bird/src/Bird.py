@@ -33,6 +33,10 @@ class Bird:
     def update(self, dt: float) -> None:
         self.movement_strategy.update(self, dt)
 
+        if self.y < 0 :
+            self.y = 0
+            self.vy = 0
+
     def render(self, surface: pygame.Surface) -> None:
         texture_key = "bird_ghost" if self.is_ghost else "bird"
         surface.blit(settings.TEXTURES[texture_key], self.get_rect())

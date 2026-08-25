@@ -77,30 +77,37 @@ class World:
 
             if self.logs_spawn_timer >= self.time_to_next_spawn:
                 self.logs_spawn_timer = 0.0
-                self.time_to_next_spawn = random.uniform(1.5, 2.0)
-                gap_size = random.randint(85, 130)
 
                 if self.mode == "hard":
-                    is_moving = random.random() < 0.3
-                    if is_moving:
-                        is_symmetrical = random.random() < 0.5
-                    else:
-                        is_symmetrical = False
-                else:
-                    is_moving = False
-                    is_symmetrical = False    
+                    self.time_to_next_spawn = random.uniform(1.2, 2.5)
+                    gap_size = random.randint(70, 105)
 
-                max_y_shift = int(25 * (self.time_to_next_spawn / 1.5))
+                    is_moving = random.random() < 0.3
+                    is_symmetrical = random.random() < 0.5 if is_moving else False
+                    max_y_shift = int(60 * self.time_to_next_spawn)
+                    
+                else:
+                    self.time_to_next_spawn = random.uniform(1.5, 2.0)
+                    gap_size = random.randint(85, 130)
+                    is_moving = False
+                    is_symmetrical = False
+                    max_y_shift = int(25 * (self.time_to_next_spawn / 1.5))
 
                 y = max(
-                    -settings.LOG_HEIGHT + 10,
+                    -settings.LOG_HEIGHT + 20,
                     min(
                         self.last_log_y + random.randint(-max_y_shift, max_y_shift),
-                        settings.VIRTUAL_HEIGHT + gap_size - settings.LOG_HEIGHT - 30,
+                        settings.VIRTUAL_HEIGHT - gap_size - settings.LOG_HEIGHT - 30,
                     ),
                 )
                 self.last_log_y = y
-                self.logs.append(self.log_pair_factory.create(settings.VIRTUAL_WIDTH, y, {"gap_size": gap_size, "is_moving": is_moving, "is_symmetrical": is_symmetrical}))
+                self.logs.append(
+                    self.log_pair_factory.create(
+                        settings.VIRTUAL_WIDTH, 
+                        y,
+                        {"gap_size": gap_size, "is_moving": is_moving, "is_symmetrical": is_symmetrical}
+                    )
+                )
 
         self.background_x += -settings.BACK_SCROLL_SPEED * dt
 
