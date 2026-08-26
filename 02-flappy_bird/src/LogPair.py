@@ -16,10 +16,17 @@ import settings
 
 
 class LogPair:
-    def __init__(self, x: float, y: float) -> None:
+    def __init__(self, x: float, y: float, gap_size: float = 90, is_moving: bool = True, is_symmetrical: bool = True) -> None:
         self.x: float = x
         self.y: float = y
         self.scored: bool = False
+        self.gap_size: float = gap_size
+        self.is_moving: bool = is_moving
+        self.is_symmetrical: bool = is_symmetrical
+        self.gap_direction: int = 1
+        self.gap_speed: float = 80.0
+        self.min_gap: float = 0.0
+        self.max_gap: float = gap_size + 20
 
     def get_top_rect(self) -> pygame.Rect:
         return pygame.Rect(round(self.x), round(self.y), settings.LOG_WIDTH, settings.LOG_HEIGHT)
@@ -27,7 +34,7 @@ class LogPair:
     def get_bottom_rect(self) -> pygame.Rect:
         return pygame.Rect(
             round(self.x),
-            round(self.y + settings.LOGS_GAP + settings.LOG_HEIGHT),
+            round(self.y + self.gap_size + settings.LOG_HEIGHT),
             settings.LOG_WIDTH,
             settings.LOG_HEIGHT,
         )
@@ -37,6 +44,24 @@ class LogPair:
 
     def update(self, dt: float) -> None:
         self.x += -settings.MAIN_SCROLL_SPEED * dt
+
+        if self.is_moving:
+
+            delta = self.gap_direction * self.gap_speed * dt
+            self.gap_size += delta
+
+            self.y -= delta / 2
+
+            if self.gap_size >= self.max_gap:
+                self.gap_size = self.max_gap
+                self.gap_direction = -1
+            elif self.gap_size <= self.min_gap:
+                self.gap_size = self.min_gap
+                self.gap_direction = 1
+
+                if "log_close" in settings.SOUNDS:
+                    settings.SOUNDS["log_close"].stop()
+                    settings.SOUNDS["log_close"].play()
 
     def is_out_of_game(self) -> bool:
         return self.x < -settings.LOG_WIDTH

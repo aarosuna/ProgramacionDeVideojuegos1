@@ -19,6 +19,9 @@ from gale import input_handler
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_ESCAPE, "quit")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RETURN, "confirm")
 input_handler.InputHandler.set_mouse_click_action(input_handler.MOUSE_BUTTON_1, "jump")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE, "pause")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_UP, "up")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_DOWN, "down")
 
 TITLE = "Flappy Bird"
 
@@ -57,8 +60,10 @@ BASE_DIR = Path(__file__).parent
 
 TEXTURES = {
     "bird": pygame.image.load(BASE_DIR / "assets" / "graphics" / "bird.png"),
+    "bird_ghost": pygame.image.load(BASE_DIR / "assets" / "graphics" / "bird_ghost.png"),
     "background": pygame.image.load(BASE_DIR / "assets" / "graphics" / "background.png"),
     "ground": pygame.image.load(BASE_DIR / "assets" / "graphics" / "ground.png"),
+    "power_up": pygame.image.load(BASE_DIR / "assets" / "graphics" / "power_up.png"),
     "log": pygame.image.load(BASE_DIR / "assets" / "graphics" / "log.png"),
 }
 # The top log of every pair is the same image, flipped upside down.
@@ -69,6 +74,11 @@ SOUNDS = {
     "explosion": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "explosion.wav"),
     "hurt": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "hurt.wav"),
     "score": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "score.wav"),
+    "power_up": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "power_up.wav"),
+    "finish_power_up": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "finish_power_up.wav"),
+    "finished_power_up": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "finished_power_up.wav"),
+    "back_power_up": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "back_power_up.wav"),
+    "log_close": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "log_close.mp3"),
 }
 
 pygame.mixer.music.load(BASE_DIR / "assets" / "sounds" / "marios_way.ogg")
