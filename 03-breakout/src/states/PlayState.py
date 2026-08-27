@@ -16,9 +16,12 @@ from gale.factory import AbstractFactory
 from gale.state import BaseState
 from gale.input_handler import InputData
 from gale.text import render_text
+from src.Projectile import Projectile 
 
 import settings
 import src.powerups
+
+
 
 
 class PlayState(BaseState):
@@ -27,10 +30,12 @@ class PlayState(BaseState):
         self.score = params["score"]
         self.lives = params["lives"]
         self.paddle = params["paddle"]
+        self.paddle.vx = 0
         self.balls = params["balls"]
         self.brickset = params["brickset"]
         self.live_factor = params["live_factor"]
         self.points_to_next_live = params["points_to_next_live"]
+        self.projectiles = []
         self.points_to_next_grow_up = (
             self.score
             + settings.PADDLE_GROW_UP_POINTS * (self.paddle.size + 1) * self.level
@@ -44,10 +49,45 @@ class PlayState(BaseState):
 
         self.powerups_abstract_factory = AbstractFactory("src.powerups")
 
+        self.shake_timer = 0.0
+        self.shake_offset = (0, 0)
+
+        # transparent temporary surface (SRCALPHA) for drawing the world
+        self.world_surface = pygame.Surface(
+            (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA
+        )
+
     def update(self, dt: float) -> None:
+
+        if getattr(self, "shake_timer", 0 ) > 0:
+            self.shake_timer -= dt
+
+            #generate random coordinates between -4 and 4 pixels.
+            self.shake_offset = (random.randint(-4,4), random.randint(-4,4))
+        else:
+            self.shake_offset = (0, 0)
+
         self.paddle.update(dt)
 
+        for projectile in self.projectiles:
+            projectile.update(dt)
+
+            if projectile.collides(self.brickset):
+                brick = self.brickset.get_colliding_brick(projectile.get_collision_rect())
+
+                if brick is not None and not brick.broken:
+                    brick.hit()
+                    self.score += brick.score()
+                    projectile.active = False
+
+        self.projectiles = [p for p in self.projectiles if p.active]
+
         for ball in self.balls:
+            if getattr(ball, "stuck", False):
+                ball.x = self.paddle.x + getattr(ball, "stuck_offset", 0)
+                ball.y = self.paddle.y - ball.height
+                continue
+
             ball.update(dt)
             ball.solve_world_boundaries()
 
@@ -55,8 +95,18 @@ class PlayState(BaseState):
             if ball.collides(self.paddle):
                 settings.SOUNDS["paddle_hit"].stop()
                 settings.SOUNDS["paddle_hit"].play()
-                ball.rebound(self.paddle)
-                ball.push(self.paddle)
+
+                if getattr(self.paddle, "can_catch", False) and not getattr(ball, "already_caught", False):
+                    ball.stuck = True
+                    ball.stuck_offset = ball.x - self.paddle.x
+                    ball.already_caught = True
+                    self.paddle.catches_left -= 1
+
+                    if self.paddle.catches_left <= 0:
+                        self.paddle.can_catch = False
+                else:
+                    ball.rebound(self.paddle)
+                    ball.push(self.paddle)
 
             # Check collision with brickset
             if not ball.collides(self.brickset):
@@ -86,11 +136,20 @@ class PlayState(BaseState):
                 )
                 self.paddle.inc_size()
 
-            # Chance to generate two more balls
-            if random.random() < 0.1:
+            # Chance to generate powerups
+            if random.random() < 1.0:
                 r = brick.get_collision_rect()
+                available_powerups = ["TwoMoreBall", "CatchPowerUp", "CannonsPowerUp"]
+                wights = [60, 40, 20]
+               
+                if self.level >=3:
+                    available_powerups.append("EarthquakePowerUp")
+                    wights.append(10)
+
+                powerup_name = random.choice(available_powerups)
+
                 self.powerups.append(
-                    self.powerups_abstract_factory.get_factory("TwoMoreBall").create(
+                    self.powerups_abstract_factory.get_factory(powerup_name).create(
                         r.centerx - 8, r.centery - 8
                     )
                 )
@@ -131,6 +190,10 @@ class PlayState(BaseState):
         if self.brickset.size == 1 and next(
             (True for _, b in self.brickset.bricks.items() if b.broken), False
         ):
+            
+            self.paddle.has_cannons = False
+            self.paddle.can_catch = False
+
             self.state_machine.change(
                 "victory",
                 lives=self.lives,
@@ -141,8 +204,40 @@ class PlayState(BaseState):
                 points_to_next_live=self.points_to_next_live,
                 live_factor=self.live_factor,
             )
+        elif not self.brickset.bricks or all(b.broken for b in self.brickset.bricks.values()):
+
+            self.paddle.has_cannons = False
+            self.paddle.can_catch = False
+            self.state_machine.change(
+                            "victory",
+                            lives=self.lives,
+                            level=self.level,
+                            score=self.score,
+                            paddle=self.paddle,
+                            balls=self.balls,
+                            points_to_next_live=self.points_to_next_live,
+                            live_factor=self.live_factor,
+                        )
 
     def render(self, surface: pygame.Surface) -> None:
+
+        # We clear our virtual surface in every frame.
+        self.world_surface.fill((0, 0, 0, 0))
+
+        self.brickset.render(self.world_surface)
+        self.paddle.render(self.world_surface)
+
+        for ball in self.balls:
+            ball.render(self.world_surface)
+
+        for powerup in self.powerups:
+            powerup.render(self.world_surface)   
+
+        for projectile in self.projectiles:
+            projectile.render(self.world_surface)
+
+        surface.blit(self.world_surface, self.shake_offset)
+
         heart_x = settings.VIRTUAL_WIDTH - 120
 
         i = 0
@@ -171,16 +266,6 @@ class PlayState(BaseState):
             (255, 255, 255),
         )
 
-        self.brickset.render(surface)
-
-        self.paddle.render(surface)
-
-        for ball in self.balls:
-            ball.render(surface)
-
-        for powerup in self.powerups:
-            powerup.render(surface)
-
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "move_left":
             if input_data.pressed:
@@ -192,16 +277,42 @@ class PlayState(BaseState):
                 self.paddle.vx = settings.PADDLE_SPEED
             elif input_data.released and self.paddle.vx > 0:
                 self.paddle.vx = 0
-        elif input_id == "pause" and input_data.pressed:
-            self.state_machine.change(
-                "pause",
-                level=self.level,
-                score=self.score,
-                lives=self.lives,
-                paddle=self.paddle,
-                balls=self.balls,
-                brickset=self.brickset,
-                points_to_next_live=self.points_to_next_live,
-                live_factor=self.live_factor,
-                powerups=self.powerups,
-            )
+
+        elif input_id == "pause" and input_data.pressed: 
+
+            ball_release = False
+
+            for ball in self.balls:
+                if getattr(ball, 'stuck', False):
+                    ball.stuck = False
+                    ball.vx = random.randint(-80, 80)
+                    ball.vy = random.randint(-170, -100)
+                    ball_release = True
+        
+            if not ball_release:
+                self.state_machine.change(
+                    "pause",
+                    level=self.level,
+                    score=self.score,
+                    lives=self.lives,
+                    paddle=self.paddle,
+                    balls=self.balls,
+                    brickset=self.brickset,
+                    points_to_next_live=self.points_to_next_live,
+                    live_factor=self.live_factor,
+                    powerups=self.powerups,
+                )
+        elif input_id == "shoot" and input_data.pressed:
+            if getattr(self.paddle, "has_cannons", False) and not self.projectiles:
+
+                cannon_width = settings.TEXTURES["cannon"].get_width()
+                offset_x = 4
+                cannon_half_width = cannon_width // 2
+                missile_half_width = 2
+                left_x = self.paddle.x + offset_x + cannon_half_width - missile_half_width
+                right_x = self.paddle.x + self.paddle.width - cannon_width - offset_x + cannon_half_width - missile_half_width
+                spawn_y = self.paddle.y - 12
+                self.projectiles.append(Projectile(left_x, spawn_y))
+                self.projectiles.append(Projectile(right_x, spawn_y))
+
+                self.paddle.has_cannons = False
