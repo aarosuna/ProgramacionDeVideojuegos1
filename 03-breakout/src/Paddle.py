@@ -19,6 +19,7 @@ class Paddle:
         self.y = y
         self.width = 64
         self.height = 16
+        self.has_cannons = False
 
         # By default, the blue paddle
         self.skin = 0
@@ -55,3 +56,14 @@ class Paddle:
 
     def render(self, surface: pygame.Surface) -> None:
         surface.blit(self.texture, (self.x, self.y), self.frames[self.skin][self.size])
+
+        if getattr(self, "has_cannons", False):
+            cannon_img = settings.TEXTURES["cannon"]
+            cannon_width = cannon_img.get_width()
+            cannon_height = cannon_img.get_height()
+            offset_x = 4
+            left_cannon_x = self.x + offset_x
+            right_cannon_x = self.x + self.width - cannon_width - offset_x
+            cannon_y = self.y - cannon_height + 2
+            surface.blit(cannon_img, (left_cannon_x, cannon_y))
+            surface.blit(cannon_img, (right_cannon_x, cannon_y))

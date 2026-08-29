@@ -10,5 +10,8 @@ This module contains all of the power ups.
 
 from src.powerups.PowerUp import PowerUp
 from src.powerups.TwoMoreBall import TwoMoreBall
+from src.powerups.CatchPowerUp import CatchPowerUp
+from src.powerups.CannonsPowerUp import CannonsPowerUp
+from src.powerups.EarthquakePowerUp import EarthquakePowerUp
 
-(PowerUp, TwoMoreBall)
+(PowerUp, TwoMoreBall, CatchPowerUp, CannonsPowerUp, EarthquakePowerUp)
