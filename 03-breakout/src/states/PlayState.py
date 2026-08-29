@@ -41,6 +41,7 @@ class PlayState(BaseState):
             + settings.PADDLE_GROW_UP_POINTS * (self.paddle.size + 1) * self.level
         )
         self.powerups = params.get("powerups", [])
+        self.earthquake_spawn_count = 0
 
         if not params.get("resume", False):
             self.balls[0].vx = random.randint(-80, 80)
@@ -137,16 +138,21 @@ class PlayState(BaseState):
                 self.paddle.inc_size()
 
             # Chance to generate powerups
-            if random.random() < 1.0:
+            if random.random() < 0.3:
                 r = brick.get_collision_rect()
                 available_powerups = ["TwoMoreBall", "CatchPowerUp", "CannonsPowerUp"]
-                wights = [60, 40, 20]
-               
-                if self.level >=3:
-                    available_powerups.append("EarthquakePowerUp")
-                    wights.append(10)
+                weights = [60, 40, 20]
 
-                powerup_name = random.choice(available_powerups)
+               #Validates the level and ensures the limit of 3 has not been exceeded to add the earthquake power-up.
+                if self.level >=3 and getattr(self, "earthquake_spawn_count", 0) < 3:
+                    available_powerups.append("EarthquakePowerUp")
+                    weights.append(10)
+
+                powerup_name = random.choices(available_powerups, weights=weights, k=1)[0]
+
+                #If the system selected the earthquake, the counter is incremented.
+                if powerup_name == "EarthquakePowerUp":
+                    self.earthquake_spawn_count += 1
 
                 self.powerups.append(
                     self.powerups_abstract_factory.get_factory(powerup_name).create(
@@ -161,6 +167,8 @@ class PlayState(BaseState):
 
         if not self.balls:
             self.lives -= 1
+            self.paddle.has_cannons = False
+            self.paddle.can_catch = False
             if self.lives == 0:
                 self.state_machine.change("game_over", score=self.score)
             else:
