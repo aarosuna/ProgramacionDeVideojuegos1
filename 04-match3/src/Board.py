@@ -26,10 +26,74 @@ class Board:
         self.tiles: List[List[Tile]] = []
         self._initialize_tiles()
 
+
+    def _simulate_swap(self, i1: int, j1: int, i2: int, j2 : int ) -> bool:
+        #swap temp
+        tile1 = self.tiles[i1][j1]
+        tile2 = self.tiles[i2][j2]
+        self.tiles[i1][j1], self.tiles[i2][j2] = tile2, tile1
+        tile1.i, tile1.j, tile2.i, tile2.j = tile2.i, tile2.j, tile1.i, tile1.j
+
+        #Support previous matches
+        old_matches = list(self.matches)
+        self.matches = []
+
+        #evaluate
+        matches = self.calculate_matches_for([tile1,tile2])
+
+        #rollback
+        self.matches = old_matches
+        self.tiles[i1][j1], self.tiles[i2][j2] = tile1, tile2
+        tile1.i, tile1.j, tile2.i, tile2.j = tile2.i, tile2.j, tile1.i, tile1.j
+
+        return matches is not None
+
+
+    def has_possible_moves(self) -> bool:
+            #Traverse the matrix, evaluating exchanges.
+            for i in range(settings.BOARD_HEIGHT):
+                for j in range(settings.BOARD_WIDTH):
+                    if j < settings.BOARD_WIDTH - 1:
+                        if self._simulate_swap(i, j, i, j + 1):
+                            return True
+                    if i < settings.BOARD_HEIGHT - 1:
+                        if self._simulate_swap(i, j, i + 1, j):
+                            return True
+                        
+            return False
+
+    def reshuffle(self) -> None:
+        #Recreate the board repeatedly until the simulator approves the layout.
+        while True:
+            # Instead of destroying objects, we repaint existing ones.
+            for i in range(settings.BOARD_HEIGHT):
+                for j in range(settings.BOARD_WIDTH):
+                    
+                    # If it's a bomb, we'll jump over it and leave it intact.
+                    if getattr(self.tiles[i][j], "is_bomb", False) or getattr(self.tiles[i][j], "is_color_bomb", False):
+                        continue
+                        
+                    # If it's not a bomb, we assign it a new random color.
+                    color = random.randint(0, settings.NUM_COLORS - 1)
+                    
+                    # validates to prevent the new colors from creating accidental matches with the pieces or bombs
+                    while self._is_match_generated(i, j, color):
+                        color = random.randint(0, settings.NUM_COLORS - 1)
+                        
+                    self.tiles[i][j].color = color
+                    self.tiles[i][j].variety = random.randint(0, settings.NUM_VARIETIES - 1)
+            
+            # Check if this new board has any valid moves.
+            if self.has_possible_moves():
+                break
+
+
     def render(self, surface: pygame.Surface) -> None:
         for row in self.tiles:
             for tile in row:
-                tile.render(surface, self.x, self.y)
+                # Only draw if it exists and is not being dragged
+                if tile is not None and not getattr(tile, "is_dragging", False):
+                    tile.render(surface, self.x, self.y)
 
     def _is_match_generated(self, i: int, j: int, color: int) -> bool:
         if (
@@ -59,6 +123,8 @@ class Board:
                 self.tiles[i][j] = Tile(
                     i, j, color, random.randint(0, settings.NUM_VARIETIES - 1)
                 )
+                self.tiles[0][0].is_color_bomb = True
+                self.tiles[0][0].color = 0
 
     def _calculate_match_rec(self, tile: Tile) -> Set[Tile]:
         if tile in self.in_stack:
@@ -141,8 +207,48 @@ class Board:
             if tile in self.in_match:
                 continue
             match = self._calculate_match_rec(tile)
+
+            # If the player clicked on a bomb, we force a virtual match. 
+            if getattr(tile, "force_explode", False) and len(match) == 0:
+                match = [tile]
+
             if len(match) > 0:
-                self.matches.append(match)
+
+                # BFS Algorithm for Pump Expansion
+                expanded_match = set(match)
+                queue = list(match)
+
+                while queue:
+                    t = queue.pop(0)
+
+                    # Line Pump Expansion
+                    if getattr(t, "is_bomb", False):
+                        for r in range (settings.BOARD_HEIGHT):
+                            adj_t = self.tiles[r][t.j]
+                            if adj_t and adj_t not in expanded_match:
+                                expanded_match.add(adj_t)
+                                queue.append(adj_t)
+
+                        for c in range (settings.BOARD_WIDTH):
+                            adj_t = self.tiles[t.i][c]
+                            if adj_t and adj_t not in expanded_match:
+                                expanded_match.add(adj_t)
+                                queue.append(adj_t)
+
+                    # Color Bomb Expansion
+                    if getattr(t, "is_color_bomb", False):
+                        target_color = t.color
+                        for r in range(settings.BOARD_HEIGHT):
+                            for c in range(settings.BOARD_WIDTH):
+                                adj_t = self.tiles[r][c]
+                                if adj_t and adj_t.color == target_color and adj_t not in expanded_match:
+                                    expanded_match.add(adj_t)
+                                    queue.append(adj_t)
+
+                for t in expanded_match:
+                    self.in_match.add(t)
+
+                self.matches.append(list(expanded_match))               
 
         delattr(self, "in_match")
         delattr(self, "in_stack")
