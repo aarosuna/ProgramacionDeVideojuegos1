@@ -26,6 +26,9 @@ class Board:
         self.tiles: List[List[Tile]] = []
         self._initialize_tiles()
 
+        if not self.has_possible_moves():
+            self.reshuffle()
+
 
     def _simulate_swap(self, i1: int, j1: int, i2: int, j2 : int ) -> bool:
         #swap temp
@@ -61,6 +64,19 @@ class Board:
                             return True
                         
             return False
+
+
+    def get_hint_move(self) -> Optional [Tuple[Tile, Tile]]:
+        for i in range(settings.BOARD_HEIGHT):
+            for j in range(settings.BOARD_WIDTH):
+                if j < settings.BOARD_WIDTH - 1:
+                    if self._simulate_swap(i, j, i, j + 1):
+                        return (self.tiles[i][j], self.tiles[i][j + 1])
+                if i < settings.BOARD_HEIGHT - 1:
+                    if self._simulate_swap(i, j, i + 1, j):
+                        return (self.tiles[i][j], self.tiles[i + 1][j])
+        return None
+
 
     def reshuffle(self) -> None:
         #Recreate the board repeatedly until the simulator approves the layout.
@@ -122,9 +138,7 @@ class Board:
 
                 self.tiles[i][j] = Tile(
                     i, j, color, random.randint(0, settings.NUM_VARIETIES - 1)
-                )
-                self.tiles[0][0].is_color_bomb = True
-                self.tiles[0][0].color = 0
+                )                
 
     def _calculate_match_rec(self, tile: Tile) -> Set[Tile]:
         if tile in self.in_stack:

@@ -30,7 +30,11 @@ class PlayState(BaseState):
         self.drag_offset_x = 0
         self.drag_offset_y = 0
         self.is_shuffling = False
-
+        self.idle_time = 0.0
+        self.hint_tiles = None
+        base_time = 5.0
+        time_added_per_level = 3.0
+        self.hint_delay = min(base_time + (self.level - 1) * time_added_per_level, 20.0)
 
         # Position in the grid which we are highlighting
         self.board_highlight_i1 = -1
@@ -63,6 +67,15 @@ class PlayState(BaseState):
             self.text_alpha_surface, (56, 56, 56, 234), pygame.Rect(0, 0, 212, 136)
         )
 
+        # Illuminated surface (Yellow)
+        self.hint_surface = pygame.Surface((settings.TILE_SIZE, settings.TILE_SIZE), pygame.SRCALPHA)
+        pygame.draw.rect(
+            self.hint_surface,
+            (255, 215, 0), 
+            pygame.Rect(0, 0, settings.TILE_SIZE, settings.TILE_SIZE),
+            border_radius=7,
+        )
+
         def decrement_timer():
             # If the board is being reorganized, we exit the function.
             if getattr(self, "is_shuffling", False):
@@ -75,7 +88,7 @@ class PlayState(BaseState):
 
         Timer.every(1, decrement_timer)
 
-    def update(self, _: float) -> None:
+    def update(self, dt: float) -> None:
         if self.timer <= 0:
             Timer.clear()
             settings.SOUNDS["game-over"].play()
@@ -86,7 +99,7 @@ class PlayState(BaseState):
             settings.SOUNDS["next-level"].play()
             self.state_machine.change("begin", level=self.level + 1, score=self.score)
 
-        if getattr(self, 'dragged_tile', None):
+        if getattr(self, "dragged_tile", None):
             pos_x, pos_y = pygame.mouse.get_pos()
             pos_x = pos_x * settings.VIRTUAL_WIDTH // settings.WINDOW_WIDTH
             pos_y = pos_y * settings.VIRTUAL_HEIGHT // settings.WINDOW_HEIGHT
@@ -94,8 +107,23 @@ class PlayState(BaseState):
             self.dragged_tile.x = pos_x - self.board.x - self.drag_offset_x
             self.dragged_tile.y = pos_y - self.board.y - self.drag_offset_y
 
+        if self.active and not getattr(self, "dragged_tile", None):
+            self.idle_time += dt
+            if self.idle_time >=self.hint_delay and self.hint_tiles is None:
+                self.hint_tiles = self.board.get_hint_move()
+
+
     def render(self, surface: pygame.Surface) -> None:
         self.board.render(surface)
+
+        if getattr(self, 'hint_tiles', None):
+            cycle = pygame.time.get_ticks() % 1000
+            alpha = 100 + (abs(cycle - 500) // 5)
+            
+            self.hint_surface.set_alpha(alpha)
+            
+            for tile in self.hint_tiles:
+                surface.blit(self.hint_surface, (self.board.x + tile.x, self.board.y + tile.y))
 
         if getattr(self, 'dragged_tile', None):
             self.dragged_tile.render(surface, self.board.x, self.board.y)
@@ -172,7 +200,7 @@ class PlayState(BaseState):
         pos_y = pos_y * settings.VIRTUAL_HEIGHT // settings.WINDOW_HEIGHT
 
         if input_id == "click" and input_data.pressed:
-          
+            self.hint_tiles = None
             i = (pos_y - self.board.y) // settings.TILE_SIZE
             j = (pos_x - self.board.x) // settings.TILE_SIZE
 
@@ -281,6 +309,9 @@ class PlayState(BaseState):
             else:
                 self.active = True
             return
+
+        self.idle_time = 0.0
+        self.hint_tiles = None
 
         settings.SOUNDS["match"].stop()
         settings.SOUNDS["match"].play()
