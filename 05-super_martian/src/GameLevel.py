@@ -35,7 +35,7 @@ class GameLevel:
                 {
                     "tile_index": obj.properties["tile_index"],
                     "x": obj.x,
-                    "y": obj.y,
+                    "y": obj.y - obj.height,
                     "width": obj.width,
                     "height": obj.height,
                 }
@@ -47,7 +47,7 @@ class GameLevel:
                     "item_name": "coins",
                     "frame_index": obj.properties["frame_index"],
                     "x": obj.x,
-                    "y": obj.y,
+                    "y": obj.y - obj.height,
                     "width": obj.width,
                     "height": obj.height,
                 }

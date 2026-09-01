@@ -12,7 +12,7 @@ from src.states.entities.BaseEntityState import BaseEntityState
 
 
 class FlyingFallState(BaseEntityState):
-    def enter(self) -> None:
+    def enter(self, *args, **kwargs) -> None:
         self.entity.change_animation("fall")
         self.entity.vx = 0
 

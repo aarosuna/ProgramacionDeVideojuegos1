@@ -71,5 +71,11 @@ ITEMS: Dict[str, Dict[int, Dict[str, Any]]] = {
             "collidable": True,
             "on_consume": pickup_yellow_coin,
         },
+        236: {
+            "texture_id": "assets",
+            "consumable": True,
+            "collidable": True,
+            "on_consume": pickup_yellow_coin,
+        },
     }
 }

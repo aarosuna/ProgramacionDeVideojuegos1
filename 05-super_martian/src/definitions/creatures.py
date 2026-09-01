@@ -51,6 +51,31 @@ FLYING_CREATURES: List[Dict[str, Any]] = [
 ]
 
 CREATURES: Dict[int, Dict[str, Any]] = {
+    0: {
+            "texture_id": "creatures",
+            "walk_speed": 15,
+            "animation_defs": {"walk": {"frames": [0, 1], "interval": 0.18}},
+            "states": {"walk": creatures_states.SnailWalkState},
+
+            "first_state": "walk",
+        },
+    8: {
+            "texture_id": "creatures",
+            "walk_speed": 15,
+            "animation_defs": {"walk": {"frames": [8, 9], "interval": 0.18}},
+            "states": {"walk": creatures_states.SnailWalkState},
+            "first_state": "walk",
+        },
+
+    32: {
+            "texture_id": "creatures",
+            "walk_speed": 0,
+            "fly_speed": 40,
+            "animation_defs": {"fly": {"frames": [32, 32], "interval": 0.12}, "fall": {"frames": [34]}},
+            "states": {"fly": creatures_states.FlyState, "fall": creatures_states.FlyingFallState}, 
+            "first_state": "fly",
+        },
+
     48: {
         "texture_id": "creatures",
         "walk_speed": 10,

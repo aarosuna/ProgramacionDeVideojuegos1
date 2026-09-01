@@ -37,4 +37,5 @@ class Creature(GameEntity):
             animation_defs=definition["animation_defs"],
         )
         self.walk_speed = definition["walk_speed"]
+        self.fly_speed = definition.get("fly_speed", 0)
         self.state_machine.change(definition["first_state"], self.flipped)
