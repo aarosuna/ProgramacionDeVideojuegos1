@@ -53,6 +53,7 @@ TEXTURES = {
         BASE_DIR / "assets" / "graphics" / "background.png"
     ),
     "tiles": pygame.image.load(BASE_DIR / "assets" / "graphics" / "match3.png"),
+    "cursor": pygame.image.load(BASE_DIR / "assets" / "graphics" / "pointer2.png")
 }
 
 FRAMES = {"tiles": generate_tile_frames(TEXTURES["tiles"])}

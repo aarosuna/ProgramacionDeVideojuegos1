@@ -21,9 +21,17 @@ class Tile:
         self.y = self.i * settings.TILE_SIZE
         self.color = color
         self.variety = variety
+
         self.alpha_surface = pygame.Surface(
             (settings.TILE_SIZE, settings.TILE_SIZE), pygame.SRCALPHA
         )
+
+        self.is_dragging = False
+        self.orig_x = self.x
+        self.orig_y = self.y
+        self.is_bomb = False
+        self.force_explode = False
+        self.is_color_bomb = False
 
     def render(self, surface: pygame.Surface, offset_x: int, offset_y: int) -> None:
         self.alpha_surface.blit(
@@ -43,3 +51,15 @@ class Tile:
             (self.x + offset_x, self.y + offset_y),
             settings.FRAMES["tiles"][self.color][self.variety],
         )
+
+        if getattr(self, "is_bomb",False):
+            center_x = self.x + offset_x + (settings.TILE_SIZE // 2)
+            center_y = self.y + offset_y + (settings.TILE_SIZE // 2)
+            pygame.draw.circle(surface, (255, 255, 255, 100), (center_x, center_y), 8)
+            pygame.draw.circle(surface, (255, 100, 100, 200), (center_x, center_y), 4)
+
+        elif getattr(self, 'is_color_bomb', False):
+            center_x = self.x + offset_x + (settings.TILE_SIZE // 2)
+            center_y = self.y + offset_y + (settings.TILE_SIZE // 2)
+            pygame.draw.circle(surface, (255, 215, 0, 150), (center_x, center_y), 10) # Gold outer circle
+            pygame.draw.circle(surface, (255, 255, 255, 200), (center_x, center_y), 5) # Bright white center

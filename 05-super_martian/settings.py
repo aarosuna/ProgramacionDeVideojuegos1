@@ -42,9 +42,22 @@ PLAYER_SPEED = 80
 
 GRAVITY = 980
 
+# Variable-height jump: the takeoff speed is always the same (full arc if
+# held), but releasing "jump" early while still ascending clamps vy up to
+# JUMP_CUT_VELOCITY (a smaller upward speed), so the arc peaks sooner and
+# lower. The longer the button stays held, the closer the jump gets to
+# its full height.
+JUMP_TAKEOFF_SPEED = GRAVITY / 3
+JUMP_CUT_VELOCITY = GRAVITY / 8
+
 CAMERA_FOLLOW_RATE = 8.0
 
-NUM_LEVELS = 1
+# Random delay range (seconds) between one flying creature leaving the
+# level and the next one spawning.
+FLYING_CREATURE_MIN_SPAWN_DELAY = 4
+FLYING_CREATURE_MAX_SPAWN_DELAY = 9
+
+NUM_LEVELS = 2
 
 BASE_DIR = pathlib.Path(__file__).parent
 
@@ -57,12 +70,14 @@ TEXTURES = {
     "tiles": pygame.image.load(BASE_DIR / "assets" / "graphics" / "tileset.png"),
     "martian": pygame.image.load(BASE_DIR / "assets" / "graphics" / "martian.png"),
     "creatures": pygame.image.load(BASE_DIR / "assets" / "graphics" / "creatures.png"),
+    "assets": pygame.image.load(BASE_DIR / "assets" / "graphics" / "Assets.png")
 }
 
 FRAMES = {
     "tiles": frames.generate_frames(TEXTURES["tiles"], 16, 16),
     "martian": frames.generate_frames(TEXTURES["martian"], 16, 20),
     "creatures": frames.generate_frames(TEXTURES["creatures"], 16, 16),
+    "assets": frames.generate_frames(TEXTURES["assets"], 16, 16),
 }
 
 SOUNDS = {

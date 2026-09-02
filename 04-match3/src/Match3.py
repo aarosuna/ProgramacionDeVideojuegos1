@@ -21,6 +21,17 @@ from src import states
 class Match3(Game):
     def init(self) -> None:
         pygame.mixer.music.play(loops=-1)
+
+        # Custom image cursor configuration
+        try:
+            cursor_img = settings.TEXTURES["cursor"]
+            custom_cursor = pygame.cursors.Cursor((0, 0), cursor_img)
+            pygame.mouse.set_cursor(custom_cursor)
+        except Exception as e:
+            print(f"Error loading the custom cursor: {e}")
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+
+
         self.state_machine = StateMachine(
             {
                 "start": lambda sm: states.StartState(sm, self),
