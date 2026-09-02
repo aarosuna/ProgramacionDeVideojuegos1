@@ -11,6 +11,7 @@ This file contains the class GameLevel.
 import random
 from typing import Any, Dict, Optional
 
+from gale import camera
 import pygame
 
 from gale.tilemap import CollisionType, collision_type_at, load_tiled_map
@@ -29,6 +30,7 @@ class GameLevel:
         self.tilemap = load_tiled_map(settings.TILEMAPS[num_level])
         self.creatures = []
         self.items = []
+        self.special_blocks = []
 
         for obj in self.tilemap.object_layers.get("creatures", []):
             self.add_creature(
@@ -42,16 +44,30 @@ class GameLevel:
             )
 
         for obj in self.tilemap.object_layers.get("coins", []):
-            self.add_item(
-                {
-                    "item_name": "coins",
-                    "frame_index": obj.properties["frame_index"],
-                    "x": obj.x,
-                    "y": obj.y - obj.height,
-                    "width": obj.width,
-                    "height": obj.height,
-                }
-            )
+            is_special = False
+            frame_idx = obj.properties.get("frame_index", 62)
+            try:
+                if "special_block" in obj.properties:
+                    is_special = obj.properties["special_block"]
+            except Exception:
+                is_special = False
+
+            if is_special:
+                from src.SpecialBlock import SpecialBlock
+                self.special_blocks.append(
+                    SpecialBlock(obj.x, obj.y - obj.height, self, frame_idx)
+                )
+            else:
+                self.add_item(
+                    {
+                        "item_name": "coins",
+                        "frame_index": obj.properties["frame_index"],
+                        "x": obj.x,
+                        "y": obj.y - obj.height,
+                        "width": obj.width,
+                        "height": obj.height,
+                    }
+                )
 
         self._schedule_flying_creature_spawn()
 
@@ -138,6 +154,8 @@ class GameLevel:
         self.tilemap.render(surface, camera)
         for creature in self.creatures:
             creature.render(surface, camera)
+        for block in self.special_blocks:
+            block.render(surface, camera)        
         for item in self.items:
             if item.active:
                 item.render(surface, camera)

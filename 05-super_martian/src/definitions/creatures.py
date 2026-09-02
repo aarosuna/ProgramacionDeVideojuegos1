@@ -71,8 +71,8 @@ CREATURES: Dict[int, Dict[str, Any]] = {
             "texture_id": "creatures",
             "walk_speed": 0,
             "fly_speed": 40,
-            "animation_defs": {"fly": {"frames": [32, 32], "interval": 0.12}, "fall": {"frames": [34]}},
-            "states": {"fly": creatures_states.FlyState, "fall": creatures_states.FlyingFallState}, 
+            "animation_defs": {"fly": {"frames": [32, 32], "interval": 0.12}},
+            "states": {"fly": creatures_states.FlyState}, 
             "first_state": "fly",
         },
 

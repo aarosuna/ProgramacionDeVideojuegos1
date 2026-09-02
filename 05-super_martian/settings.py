@@ -70,7 +70,8 @@ TEXTURES = {
     "tiles": pygame.image.load(BASE_DIR / "assets" / "graphics" / "tileset.png"),
     "martian": pygame.image.load(BASE_DIR / "assets" / "graphics" / "martian.png"),
     "creatures": pygame.image.load(BASE_DIR / "assets" / "graphics" / "creatures.png"),
-    "assets": pygame.image.load(BASE_DIR / "assets" / "graphics" / "Assets.png")
+    "assets": pygame.image.load(BASE_DIR / "assets" / "graphics" / "Assets.png"),
+    "key": pygame.image.load(BASE_DIR / "assets" / "graphics" / "key.png")
 }
 
 FRAMES = {
@@ -78,6 +79,7 @@ FRAMES = {
     "martian": frames.generate_frames(TEXTURES["martian"], 16, 20),
     "creatures": frames.generate_frames(TEXTURES["creatures"], 16, 16),
     "assets": frames.generate_frames(TEXTURES["assets"], 16, 16),
+    "key": frames.generate_frames(TEXTURES["key"], 16, 16),
 }
 
 SOUNDS = {
@@ -87,9 +89,13 @@ SOUNDS = {
     "jump": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "jump.wav"),
     "timer": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "timer.wav"),
     "count": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "count.wav"),
+    "victory": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "victory.mp3"),
+    "finish" : pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "finish.mp3"),
 }
 
 SOUNDS["pickup_coin"].set_volume(0.5)
+SOUNDS["victory"].set_volume(0.5)
+SOUNDS["finish"].set_volume(0.5)
 
 FONTS = {
     "small": pygame.font.Font(BASE_DIR / "assets" / "fonts" / "font.ttf", 8),
