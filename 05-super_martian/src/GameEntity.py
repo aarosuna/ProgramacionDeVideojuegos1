@@ -14,6 +14,7 @@ from gale.state import StateMachine, BaseState
 from gale.tilemap import move_and_collide
 
 import settings
+import pygame
 from src import mixins
 
 
@@ -90,3 +91,6 @@ class GameEntity(mixins.DrawableMixin, mixins.AnimatedMixin, mixins.CollidableMi
             self.x = 0
         elif self.x + self.width > self.tilemap.pixel_width:
             self.x = self.tilemap.pixel_width - self.width
+
+    def get_rect(self) -> pygame.Rect:
+        return pygame.Rect(self.x, self.y, self.width, self.height)

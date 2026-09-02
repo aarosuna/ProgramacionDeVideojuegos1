@@ -12,4 +12,4 @@ from src.states.entities.creatures_states.FlyingFallState import FlyingFallState
 from src.states.entities.creatures_states.FlyState import FlyState
 from src.states.entities.creatures_states.SnailWalkState import SnailWalkState
 
-(FlyingFallState, FlyState, SnailWalkState)
+(FlyingFallState, FlyState, SnailWalkState)   # Silence pyflakes unused import warnings

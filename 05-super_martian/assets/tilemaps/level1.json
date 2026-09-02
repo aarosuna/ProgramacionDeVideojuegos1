@@ -2331,6 +2331,27 @@
               "value": 62
             }
           ]
+        },
+        {
+          "id": 99,
+          "name": "bloque_llave",
+          "type": "coin",
+          "x": 140, 
+          "y": 44, 
+          "width": 16,
+          "height": 16,
+          "properties": [
+            {
+              "name": "frame_index",
+              "type": "int",
+              "value": 236
+            },
+            {
+              "name": "special_block",
+              "type": "bool",
+              "value": true
+            }
+          ]
         }
       ]
     }
