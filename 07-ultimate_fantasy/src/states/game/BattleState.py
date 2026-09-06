@@ -33,6 +33,7 @@ from src.definitions.entity import (
 from src.entity.Enemy import Enemy
 from src.gui.Panel import Panel
 from src.states.entity.EnemyBattleState import EnemyBattleState
+from src.states.game.TakeTurnState import TakeTurnState
 
 TILE_IDS = settings.TILE_IDS
 
@@ -164,10 +165,28 @@ class BattleState(BaseState):
         if not self.battle_started:
             self.battle_started = True
             self._trigger_starting_dialogue()
+            return
 
         for enemy in self.enemies:
             if not enemy.dead:
                 enemy.update(dt)
+
+        combatants = list(self.party.characters.values()) + self.enemies
+
+        for entity in combatants:
+            if not entity.dead:
+                entity.current_rest_time -= dt
+
+                if entity.current_rest_time <= 0:
+                    entity.current_rest_time = entity.base_rest_time
+                    self.state_machine.push(
+                        TakeTurnState(self.state_machine), 
+                        battle_state=self, 
+                        entity=entity
+                    )
+                    return
+
+                  
 
     def _trigger_starting_dialogue(self) -> None:
         from src.states.game.BattleMenuState import BattleMenuState

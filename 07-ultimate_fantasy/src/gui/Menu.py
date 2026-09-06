@@ -55,12 +55,15 @@ class Menu:
         # it was) so ListView's selected-row highlight fill -- which spans
         # its full width/row-height -- never paints over (and erases) the
         # panel's own 2px border.
+        list_view_items = [(item[0], item[1]) for item in items]
+        self.item_alphas = [item[2] if len(item) > 2 else 255 for item in items]
+
         self.list_view = ListView(
             x + 4,
             y + 3,
             width - 8,
             height - 6,
-            items=items,
+            items=list_view_items,
             font=font or settings.FONTS["medium"],
             cursor=None,
             theme=_MENU_THEME,
@@ -80,8 +83,22 @@ class Menu:
         self.list_view.update(dt)
 
     def render(self, surface: pygame.Surface) -> None:
-        self.panel.render(surface)
-        self.list_view.render(surface)
+        self.panel.render(surface)     
+        font = self.list_view._font
+        text_color = self.list_view.theme.text_color
+        for i, item in enumerate(self.list_view.items):
+            text = item[0]
+            alpha = self.item_alphas[i]
+            
+            # Create and implement transparency
+            text_surface = font.render(text, True, text_color)
+            text_surface.set_alpha(alpha)
+            
+            # Position and draw
+            row_rect = self.list_view.row_rect(i)
+            text_rect = text_surface.get_rect(center=row_rect.center)
+            surface.blit(text_surface, text_rect)
+
 
         if self.cursor is not None and self.list_view.items:
             row_rect = self.list_view.row_rect(self.list_view.selected_index)

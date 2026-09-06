@@ -26,27 +26,25 @@ import settings
 
 
 class TakeTurnState(BaseState):
-    def enter(self, battle_state: Any) -> None:
+    def enter(self, battle_state: Any, entity: Any) -> None:
         self.battle_state = battle_state
-        self.enemy_attacks_in_a_row = 0
-        self._take_party_turn(0)
+        self.entity = entity
+        self.enemy_attacks_in_a_row = getattr(self, "enemy_attacks_in_a_row", 0)
+
+        if self.entity in self.battle_state.party.characters.values():
+            self._take_party_turn(self.entity)
+        else:
+            self._take_enemy_turn(self.entity)
 
     def _party_keys(self):
         return sorted(self.battle_state.party.characters.keys())
 
     # -- party turns ---------------------------------------------------
 
-    def _take_party_turn(self, index: int) -> None:
-        keys = self._party_keys()
-
-        if index >= len(keys):
-            self._take_enemy_turn(0)
-            return
-
-        character = self.battle_state.party.characters[keys[index]]
+    def _take_party_turn(self, character: Any) -> None:
 
         if character.dead:
-            self._take_party_turn(index + 1)
+            self.state_machine.pop()
             return
 
         from src.states.game.BattleMessageState import BattleMessageState
@@ -55,17 +53,17 @@ class TakeTurnState(BaseState):
             BattleMessageState(self.state_machine),
             battle_state=self.battle_state,
             message=f"Turn for {character.name}! Select an action.",
-            on_close=lambda: self._prompt_action(character, index),
+            on_close=lambda: self._prompt_action(character),
         )
 
-    def _prompt_action(self, character: Any, index: int) -> None:
+    def _prompt_action(self, character: Any) -> None:
         from src.states.game.SelectActionState import SelectActionState
 
         def on_action_selected() -> None:
             if all(enemy.dead for enemy in self.battle_state.enemies):
                 self._victory()
             else:
-                self._take_party_turn(index + 1)
+                self.state_machine.pop()
 
         self.state_machine.push(
             SelectActionState(self.state_machine),
@@ -76,17 +74,10 @@ class TakeTurnState(BaseState):
 
     # -- enemy turns ----------------------------------------------------
 
-    def _take_enemy_turn(self, index: int) -> None:
-        enemies = self.battle_state.enemies
-
-        if index >= len(enemies):
-            self._take_party_turn(0)
-            return
-
-        enemy = enemies[index]
+    def _take_enemy_turn(self, enemy: Any) -> None:
 
         if enemy.dead:
-            self._take_enemy_turn(index + 1)
+            self.state_machine.pop()
             return
 
         self.enemy_attacks_in_a_row += 1
@@ -131,10 +122,11 @@ class TakeTurnState(BaseState):
                 and enemy.klass == "boss"
                 and random.randint(1, 3) == 1
             ):
-                self._take_enemy_turn(index)
+                enemy.current_rest_time = 0
+                self.state_machine.pop() 
             else:
                 self.enemy_attacks_in_a_row = 0
-                self._take_enemy_turn(index + 1)
+                self.state_machine.pop()
 
         self.state_machine.push(
             BattleMessageState(self.state_machine),
@@ -257,11 +249,36 @@ class TakeTurnState(BaseState):
         if self.battle_state.final_boss:
 
             def on_complete() -> None:
-                settings.SOUNDS["the-end"].play()
                 # Pops this lingering TakeTurnState, then the BattleState
-                # underneath it (matches the original's "pop twice").
+                # underneath it (matches the original's "pop twice"). The
+                # second pop runs BattleState.exit(), which always calls
+                # the on_exit it was pushed with (see
+                # PartyWalkState._trigger_encounter) -- for a NORMAL battle
+                # that's the whole point (it un-pauses the overworld's
+                # "world"/"town" music the encounter had merely paused,
+                # not stopped, so walking around resumes right where the
+                # music left off), but here there's no overworld to return
+                # to: the very next thing on screen is TheEndState. Without
+                # silencing what that on_exit just resumed, it played
+                # underneath "the-end" for the rest of the game -- the two
+                # overlapping tracks this whole fix is about. _victory
+                # already stopped "battle" and _fade_out already stopped
+                # the "victory" jingle, so this only has the resumed
+                # overworld music left to clean up, but stopping "battle"
+                # again too is harmless and keeps this correct even if
+                # that ordering ever changes.
                 self.state_machine.pop()
                 self.state_machine.pop()
+                settings.stop_music("battle")
+                settings.stop_music("world")
+                settings.stop_music("town")
+                # A bare SOUNDS["the-end"].play() (the original code here)
+                # starts a plain, untracked Sound channel -- unlike every
+                # other music cue in this game, it was never routed
+                # through play_music, so nothing could stop it the same
+                # way the stops above stop everything else (see
+                # TheEndState's restart handler).
+                settings.play_music("the-end")
 
                 from src.states.game.TheEndState import TheEndState
 
