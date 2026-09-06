@@ -26,6 +26,7 @@ input_handler.InputHandler.set_keyboard_action(input_handler.KEY_DOWN, "move_dow
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE, "sword")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RETURN, "enter")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_KP_ENTER, "enter")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_f, "shoot")
 
 TITLE = "The Legend of the Princess"
 
@@ -83,6 +84,11 @@ TEXTURES = {
     "hearts": pygame.image.load(BASE_DIR / "assets" / "graphics" / "hearts.png"),
     "switches": pygame.image.load(BASE_DIR / "assets" / "graphics" / "switches.png"),
     "entities": pygame.image.load(BASE_DIR / "assets" / "graphics" / "entities.png"),
+    "chest": pygame.image.load(BASE_DIR / "assets" / "graphics" / "chest.png"),
+    "bow": pygame.image.load(BASE_DIR / "assets" / "graphics" / "bow.png"),
+    "arrow": pygame.image.load(BASE_DIR / "assets" / "graphics" / "arrow.png"),
+    "boss": pygame.image.load(BASE_DIR / "assets" / "graphics" / "demon.png"),
+    "fireball": pygame.image.load(BASE_DIR / "assets" / "graphics" / "fireball.png"),
     "character-pot-lift": pygame.image.load(
         BASE_DIR / "assets" / "graphics" / "character_pot_lift.png"
     ),
@@ -104,6 +110,11 @@ FRAMES = {
     "hearts": frames.generate_frames(TEXTURES["hearts"], 16, 16),
     "switches": frames.generate_frames(TEXTURES["switches"], 16, 18),
     "entities": frames.generate_frames(TEXTURES["entities"], 16, 16),
+    "chest": frames.generate_frames(TEXTURES["chest"], 16, 16),
+    "bow": frames.generate_frames(TEXTURES["bow"], 16, 16),
+    "arrow": frames.generate_frames(TEXTURES["arrow"], 16, 16),
+    "boss": frames.generate_frames(TEXTURES["boss"], 32, 48),
+    "fireball": frames.generate_frames(TEXTURES["fireball"], 16, 16),
     "character-pot-lift": frames.generate_frames(TEXTURES["character-pot-lift"], 16, 32),
     "character-pot-walk": frames.generate_frames(TEXTURES["character-pot-walk"], 16, 32),
 }
@@ -124,6 +135,9 @@ FONTS = {
     "princess-small": pygame.font.Font(
         BASE_DIR / "assets" / "fonts" / "princess.otf", 24
     ),
+    "princess-little": pygame.font.Font(
+            BASE_DIR / "assets" / "fonts" / "princess.otf", 12
+    )
 }
 
 SOUNDS = {
@@ -135,6 +149,8 @@ SOUNDS = {
         BASE_DIR / "assets" / "sounds" / "heart_taken.wav"
     ),
     "pot-wall": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "pot_wall.wav"),
+    "chest-open": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "chest_open.wav"),
+    "arrow": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "arrow.wav"),
 }
 
 MUSIC = {

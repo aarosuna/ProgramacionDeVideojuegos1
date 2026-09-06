@@ -9,14 +9,16 @@ This file contains the class Dungeon.
 """
 
 import math
+from random import random
 from typing import Callable, TypeVar
 
 import pygame
-
+import random
 from gale.timer import Timer
 
 import settings
 from src.world.Room import Room
+from src.world.BossRoom import BossRoom
 
 
 class Dungeon:
@@ -26,10 +28,12 @@ class Dungeon:
         on_game_over: Callable[[], None],
     ) -> None:
         self.player = player
+        self.chest_spawned = False
+        self.player.has_bow = False
         self.on_game_over = on_game_over
 
         # Current room we're operating in.
-        self.current_room = Room(self.player, self.on_game_over)
+        self.current_room = Room(self, self.player, self.on_game_over)
 
         # Room we're moving the camera to during a shift; becomes the
         # active room afterwards.
@@ -47,7 +51,11 @@ class Dungeon:
         PlayerWalkState/PlayerPotWalkState.
         """
         self.shifting = True
-        self.next_room = Room(self.player, self.on_game_over)
+        has_bow = hasattr(self.player, "bow") and self.player.bow is not None
+        if has_bow and random.randint(1, 3) == 1:
+            self.next_room = BossRoom(self, self.player, self.on_game_over)
+        else:
+            self.next_room = Room(self, self.player, self.on_game_over)
 
         # Start all doors in next room as open until we get in.
         for doorway in self.next_room.doorways:

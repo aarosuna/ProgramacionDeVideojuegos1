@@ -18,6 +18,7 @@ from src.definitions.entity import ENTITY_DEFS
 from src.Player import Player
 from src.states.entity import player as player_states
 from src.world.Dungeon import Dungeon
+from src.states.entity.player.PlayerShootState import PlayerShootState
 
 
 class PlayState(BaseState):
@@ -53,6 +54,9 @@ class PlayState(BaseState):
                 self.player, sm, self.dungeon
             ),
             "pot-walk": lambda sm: player_states.PlayerPotWalkState(
+                self.player, sm, self.dungeon
+            ),
+            "shoot": lambda sm: player_states.PlayerShootState(
                 self.player, sm, self.dungeon
             ),
         }

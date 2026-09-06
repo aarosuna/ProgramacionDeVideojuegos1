@@ -37,6 +37,7 @@ class Player(Entity):
         # the same way jump_requested works in 05-super_martian.
         self.sword_requested = False
         self.interact_requested = False
+        self.shoot_requested = False
 
         self.command_bindings = CommandBindings()
         self.command_bindings.bind("move_left", press=MOVE_LEFT, release=STOP_MOVE_LEFT)
@@ -65,4 +66,7 @@ class Player(Entity):
         )
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
+
+        if input_id == "shoot" and input_data.pressed:
+            self.shoot_requested = True
         self.command_bindings.dispatch(self, input_id, input_data)

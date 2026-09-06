@@ -14,6 +14,8 @@ from typing import Any, Callable, List, Optional, TypeVar
 import pygame
 
 from gale.tilemap import TileMap
+from gale.timer import Timer
+from src.Bow import Bow
 
 import settings
 from src.definitions.entity import ENTITY_DEFS
@@ -82,11 +84,13 @@ def _doorway_opening_for(
 class Room:
     def __init__(
         self,
+        dungeon: TypeVar("Dungeon"),
         player: TypeVar("Player"),
         on_game_over: Callable[[], None],
     ) -> None:
         # Reference to player for collisions, etc.
         self.player = player
+        self.dungeon = dungeon
         self.on_game_over = on_game_over
 
         self.width = settings.MAP_WIDTH
@@ -154,10 +158,14 @@ class Room:
                 and not self.player.invulnerable
             ):
                 settings.SOUNDS["hit-player"].play()
-                self.player.damage(1)
+                if entity.__class__.__name__ == "Boss":
+                    self.player.damage(2)
+                else:
+                    self.player.damage(1)
+
                 self.player.go_invulnerable(1.5)
 
-                if self.player.health == 0:
+                if self.player.health <= 0:
                     self.on_game_over()
 
         self.entities = [entity for entity in self.entities if not entity.dead]
@@ -166,7 +174,7 @@ class Room:
             obj.update(dt)
 
             if self.player.collides(obj):
-                obj.on_collide()
+                obj.on_collide(self.player, obj)
 
                 if obj.solid and not obj.taken:
                     self._push_player_out_of(obj)
@@ -178,17 +186,28 @@ class Room:
         for projectile in list(self.projectiles):
             projectile.update(dt)
 
-            for entity in self.entities:
-                if projectile.dead:
-                    break
-
-                if not entity.dead and projectile.collides(entity):
-                    entity.damage(1)
-                    settings.SOUNDS["hit-enemy"].play()
+            if getattr(projectile, "is_enemy_projectile", False):
+                if not self.player.invulnerable and projectile.collides(self.player):
+                    self.player.damage(1, source="fireball")
+                    settings.SOUNDS["hit-player"].play()
+                    self.player.damage(self.player.health)
+                    self.player.go_invulnerable(1.5)
                     projectile.dead = True
+                    if self.player.health <= 0:
+                        self.on_game_over()
 
-            if projectile.dead:
-                self.projectiles.remove(projectile)
+            else:
+                for entity in self.entities:
+                    if projectile.dead:
+                        break
+
+                    if not entity.dead and projectile.collides(entity):
+                        entity.damage(1, source="arrow")
+                        settings.SOUNDS["hit-enemy"].play()
+                        projectile.dead = True
+
+                if projectile.dead:
+                    self.projectiles.remove(projectile)
 
     def _push_player_out_of(self, obj: GameObject) -> None:
         player = self.player
@@ -250,6 +269,35 @@ class Room:
             if adjacent:
                 self.objects.remove(obj)
                 player.change_state("pot-lift", pot=obj)
+                return
+
+    def interact_adjacent_object(self, player: TypeVar("Player")) -> None:
+        """
+        Looks for an interactable object directly in front of the player (one
+        tile away, in the direction they're currently facing) and, if
+        found, calls its on_interact method.
+        """
+        player_y = player.y + player.height / 2
+        player_height = player.height - player.height / 2
+        player_col = int((player.x + player.width / 2) // settings.TILE_SIZE)
+        player_row = int((player_y + player_height / 2) // settings.TILE_SIZE)
+
+        for obj in self.objects:
+            if not obj.on_interact:
+                continue
+
+            obj_col = int((obj.x + obj.width / 2) // settings.TILE_SIZE)
+            obj_row = int((obj.y + obj.height / 2) // settings.TILE_SIZE)
+
+            adjacent = (
+                (player.direction == "right" and obj_row == player_row and obj_col == player_col + 1)
+                or (player.direction == "left" and obj_row == player_row and obj_col == player_col - 1)
+                or (player.direction == "up" and obj_col == player_col and obj_row == player_row - 1)
+                or (player.direction == "down" and obj_col == player_col and obj_row == player_row + 1)
+            )
+
+            if adjacent and hasattr(obj, "on_interact") and obj.on_interact is not None:
+                obj.on_interact(player, obj)
                 return
 
     def _generate_walls_and_floors(self) -> None:
@@ -333,7 +381,34 @@ class Room:
         )
         self.objects.append(switch)
 
-        def open_all_doors() -> None:
+        if not self.dungeon.chest_spawned:
+            if random.randint(1, 4) == 1:
+                chest_x = random.randint(2, settings.MAP_WIDTH - 3) * settings.TILE_SIZE
+                chest_y = random.randint(2, settings.MAP_HEIGHT - 3) * settings.TILE_SIZE
+                chest = GameObject(GAME_OBJECT_DEFS["chest"], chest_x, chest_y)
+
+                def open_chest_with_animation(player, obj) -> None:
+
+                    if player.direction != "up":
+                        return
+
+                    if getattr(obj, "state", "closed") == "closed":
+                        obj.state = "open"
+                        player.bow = Bow()
+                        settings.SOUNDS["chest-open"].play()
+                        bow = GameObject(GAME_OBJECT_DEFS["bow"], obj.x, obj.y)
+                        self.objects.append(bow)
+                        Timer.tween(
+                            1.0,
+                            [(bow, {"y": obj.y - 16})],
+                            on_finish=lambda: self.objects.remove(bow)
+                        )
+                chest.on_interact = open_chest_with_animation
+                self.objects.append(chest)
+                self.dungeon.chest_spawned = True
+
+
+        def open_all_doors(player, obj) -> None:
             if switch.state == "unpressed":
                 switch.state = "pressed"
 
@@ -347,9 +422,12 @@ class Room:
         for y in range(2, self.height):
             for x in range(2, self.width):
                 if random.randint(1, 20) == 1:
-                    self.objects.append(
-                        GameObject(GAME_OBJECT_DEFS["pot"], x * 16, y * 16)
-                    )
+                    pot_x = x * settings.TILE_SIZE
+                    pot_y = y * settings.TILE_SIZE
+                    no_space = any(obj.x == pot_x and obj.y == pot_y for obj in self.objects)
+
+                    if not no_space:
+                        self.objects.append(GameObject(GAME_OBJECT_DEFS["pot"], pot_x, pot_y))
 
     def render(
         self,

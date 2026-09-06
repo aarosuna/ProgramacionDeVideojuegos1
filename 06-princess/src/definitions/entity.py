@@ -177,4 +177,18 @@ ENTITY_DEFS: Dict[str, Dict[str, Any]] = {
             "idle-up": {"frames": [95]},
         },
     },
+    "boss": {
+        "walk_speed": 25,
+        "animations": {
+            "walk-left": {"frames": [1, 2, 3, 4], "interval": 0.2, "texture": "boss"},
+            "walk-right": {"frames": [1, 2, 3, 4], "interval": 0.2, "texture": "boss"},
+            "walk-up": {"frames": [1, 2, 3, 4], "interval": 0.2, "texture": "boss"},
+            "walk-down": {"frames": [1, 2, 3, 4], "interval": 0.2, "texture": "boss"},
+            "idle-left": {"frames": [1], "texture": "boss"},
+            "idle-right": {"frames": [1], "texture": "boss"},
+            "idle-up": {"frames": [1], "texture": "boss"},
+            "idle-down": {"frames": [1], "texture": "boss"},
+        }
+    }
+
 }
