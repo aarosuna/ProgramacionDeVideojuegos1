@@ -23,11 +23,12 @@ from gale.physics.world import World
 import settings
 from src.definitions.entity import BIRD, density_for_circle
 
-
 class Bird:
     def __init__(self, world: World, x: float, y: float) -> None:
         self.radius: float = BIRD["radius"]
         self.mass: float = BIRD["mass"]
+
+        self.can_split: bool = True
 
         density = density_for_circle(self.mass, self.radius)
         self.body = world.create_dynamic_body(
@@ -66,3 +67,9 @@ class Bird:
         rotated = pygame.transform.rotate(scaled, -math.degrees(self.body.angle))
         rect = rotated.get_rect(center=camera.world_to_screen(self.body.position))
         surface.blit(rotated, rect)
+
+    def calculate_split_velocities(self, angle_degrees: float = 15.0):
+        vel = pygame.Vector2(self.body.velocity.x, self.body.velocity.y)
+        vel_top = vel.rotate(-angle_degrees)
+        vel_bottom = vel.rotate(angle_degrees)
+        return (vel_top.x, vel_top.y), (vel_bottom.x, vel_bottom.y)
