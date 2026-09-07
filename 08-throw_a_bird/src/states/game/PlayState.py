@@ -89,12 +89,17 @@ HUD_TEXT = "Drag the bird to aim and release to fling. Drag elsewhere to pan."
 
 class PlayState(BaseState):
     def enter(self) -> None:
+
+        if not pygame.mixer.music.get_busy():
+            pygame.mixer.music.play(-1)
+
         self.world = World(gravity=settings.GRAVITY)
 
         self.world.on_collision_begin(self._on_collision_begin)
 
         self.level = Level(self.world)
         initial_bird = Bird(self.world, self.level.bird_start.x, self.level.bird_start.y)
+        initial_bird.randomize_type()
         self.birds = [initial_bird]
 
         self.camera = Camera(settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT)
@@ -151,7 +156,6 @@ class PlayState(BaseState):
     def _hold_bird_at_rest(self) -> None:
         self.birds = [self.birds[0]] 
         self.birds[0].reset()
-        self.birds[0].can_split = True
 
     def _hold_bird_while_aiming(self) -> None:
         # world.update(dt) above still steps gravity on the bird every
@@ -189,7 +193,7 @@ class PlayState(BaseState):
                 
                 self.birds = [self.birds[0]]
                 self.birds[0].reset()
-                self.birds[0].can_split = True
+                self.birds[0].randomize_type()
                 self.camera_target.update(self.birds[0].position)
         else:
             self.idle_frames = 0
@@ -229,6 +233,9 @@ class PlayState(BaseState):
             self._render_pull_line(surface)
 
         render_text(surface, HUD_TEXT, settings.FONTS["small"], 10, 10, (70, 55, 40))
+
+        enemies_msg = f"Aliens: {self.level.enemies_alive} / {self.level.total_enemies}"
+        render_text(surface, enemies_msg, settings.FONTS["medium"], 10, 35, (200, 40, 40))
 
     def _render_pull_line(self, surface: pygame.Surface) -> None:
         start = self.camera.world_to_screen(self.birds[0].initial_position)
@@ -277,7 +284,6 @@ class PlayState(BaseState):
         self.birds[0].body.apply_impulse(pull.x * scale, pull.y * scale)
         self.flinging = True
         self.idle_frames = 0
-        self.birds[0].can_split = True
 
     def _on_touch_motion(self, input_data: InputData) -> None:
         if not (self.aiming or self.panning):
@@ -314,11 +320,13 @@ class PlayState(BaseState):
 
         clone_top = Bird(self.world, pos_x, pos_y)
         clone_top.body.velocity = vel_top
+        clone_top.image = main_bird.image.copy()
         clone_top.can_split = False
 
 
         clone_bottom = Bird(self.world, pos_x, pos_y)
         clone_bottom.body.velocity = vel_bottom
+        clone_bottom.image = main_bird.image.copy()
         clone_bottom.can_split = False
 
         self.birds.extend([clone_top, clone_bottom])

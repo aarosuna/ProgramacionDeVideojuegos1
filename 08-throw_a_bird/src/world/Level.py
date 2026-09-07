@@ -149,6 +149,16 @@ class Level:
         )
 
     @property
+    def enemies_alive(self) -> int:
+        """Count how many blocks with the enemy archetype remain on the active list."""
+        return sum(1 for block in self.blocks if block.archetype in ENEMY_ARCHETYPES)
+
+    @property
+    def total_enemies(self) -> int:
+        """Returns the total number of enemies spawned at the start of the level."""
+        return self._enemy_count
+
+    @property
     def bird_start(self) -> pygame.Vector2:
         x, y = BIRD_START_DEFOLD
         return pygame.Vector2(x, settings.flip_y(y))
