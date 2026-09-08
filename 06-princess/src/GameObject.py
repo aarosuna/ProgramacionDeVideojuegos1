@@ -33,7 +33,7 @@ class GameObject:
         self.width = definition["width"]
         self.height = definition["height"]
 
-        self.on_collide = definition.get("on_collide") or (lambda: None)
+        self.on_collide = definition.get("on_collide") or (lambda player, obj: None)
 
         # Whether this object is consumable or not.
         self.consumable = definition.get("consumable", False)
@@ -42,6 +42,8 @@ class GameObject:
         # An object could be taken or not.
         self.takeable = definition.get("takeable", False)
         self.taken = False
+
+        self.on_interact = definition.get("on_interact")
 
     def get_collision_rect(self) -> pygame.Rect:
         return pygame.Rect(round(self.x), round(self.y), self.width, self.height)

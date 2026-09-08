@@ -39,12 +39,24 @@ class PlayerIdleState(BaseEntityState):
             self.entity.change_state("swing-sword")
             return
 
+        # If the player has requested to shoot, we change to the shoot state
+        if getattr(self.entity, "shoot_requested", False):
+            self.entity.shoot_requested = False
+            # Checks if the player has a bow before switching to the shooting state.
+            if hasattr(self.entity, "bow") and self.entity.bow is not None:
+                self.entity.change_state("shoot")
+                return
+
+
         if self.entity.interact_requested:
             self.entity.interact_requested = False
+            self.dungeon.current_room.interact_adjacent_object(self.entity)
             self.dungeon.current_room.take_adjacent_pot(self.entity)
 
             if self.entity.state_machine.current is not self:
                 return
+
+        
 
         held = self.entity.held
 

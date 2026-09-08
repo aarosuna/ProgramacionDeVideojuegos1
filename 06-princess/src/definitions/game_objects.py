@@ -18,6 +18,12 @@ def _pickup_heart(player, obj) -> None:
     settings.SOUNDS["heart-taken"].play()
 
 
+def _open_chest(player, chest_obj) -> None:
+    if getattr(chest_obj, "state", "closed") == "closed":
+        chest_obj.state = "open"
+        player.has_bow = True
+        settings.SOUNDS["chest-open"].play()
+
 GAME_OBJECT_DEFS: Dict[str, Dict[str, Any]] = {
     "switch": {
         "type": "switch",
@@ -60,5 +66,49 @@ GAME_OBJECT_DEFS: Dict[str, Dict[str, Any]] = {
             "default": {"frame": 5},
         },
         "on_consume": _pickup_heart,
+    },
+    "chest":{
+        "type": "chest",
+        "texture": "chest",
+        "frame": 1,
+        "width": 16,
+        "height": 16,
+        "solid": True,
+        "consumable": False,
+        "default_state": "closed",
+        "states": {
+            "closed": {"frame": 0},
+            "open": {"frame": 5},
+        },
+        "on_interact": _open_chest,
+    },
+    "bow": {
+        "type": "bow",
+        "texture": "bow",
+        "frame": 1,
+        "width": 16,
+        "height": 16,
+        "solid": False,
+        "consumable": False,
+        "default_state": "default",
+        "states": {
+            "default": {"frame": 1},
+        }
+    },
+    "arrow": {
+        "type": "arrow",
+        "texture": "arrow",
+        "frame": 1,
+        "width": 16,
+        "height": 16,
+        "solid": False,
+        "consumable": False,
+        "default_state": "up",
+        "states": {
+            "right": {"frame": 1},
+            "up": {"frame": 2},
+            "left": {"frame": 3},
+            "down": {"frame": 4},
+        }
     },
 }

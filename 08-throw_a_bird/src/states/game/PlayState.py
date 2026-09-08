@@ -89,13 +89,21 @@ HUD_TEXT = "Drag the bird to aim and release to fling. Drag elsewhere to pan."
 
 class PlayState(BaseState):
     def enter(self) -> None:
+
+        if not pygame.mixer.music.get_busy():
+            pygame.mixer.music.play(-1)
+
         self.world = World(gravity=settings.GRAVITY)
 
+        self.world.on_collision_begin(self._on_collision_begin)
+
         self.level = Level(self.world)
-        self.bird = Bird(self.world, self.level.bird_start.x, self.level.bird_start.y)
+        initial_bird = Bird(self.world, self.level.bird_start.x, self.level.bird_start.y)
+        initial_bird.randomize_type()
+        self.birds = [initial_bird]
 
         self.camera = Camera(settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT)
-        self.camera.x, self.camera.y = self.bird.position
+        self.camera.x, self.camera.y = self.birds[0].position
         self.camera_target = pygame.Vector2(self.camera.x, self.camera.y)
         self.camera.follow(self.camera_target, rate=CAMERA_FOLLOW_RATE)
         # Mirrors main.script's self.camera_zoom (ranges 1..1.5, bigger
@@ -113,6 +121,11 @@ class PlayState(BaseState):
         self.pressed_camera_target = pygame.Vector2()
         self.aim_offset = pygame.Vector2()
 
+    def _on_collision_begin(self, body_a, body_b) -> None:
+        for bird in self.birds:
+            if body_a.user_data == bird or body_b.user_data == bird:
+                bird.can_split = False
+
     def fixed_update(self) -> None:
         # Driven by gale.game.Game's own accumulator (added in gale
         # 1.10.0) instead of calling self.world.update(dt) here, which
@@ -129,7 +142,8 @@ class PlayState(BaseState):
             return
 
         if self.flinging:
-            self.camera_target.update(self.bird.position)
+            if len(self.birds) > 0:
+                self.camera_target.update(self.birds[0].position)
             self._update_idle()
         elif self.aiming:
             self._hold_bird_while_aiming()
@@ -140,7 +154,8 @@ class PlayState(BaseState):
         self.camera.update(dt)
 
     def _hold_bird_at_rest(self) -> None:
-        self.bird.reset()
+        self.birds = [self.birds[0]] 
+        self.birds[0].reset()
 
     def _hold_bird_while_aiming(self) -> None:
         # world.update(dt) above still steps gravity on the bird every
@@ -152,13 +167,36 @@ class PlayState(BaseState):
         # the bird around erratically the moment position gets set again.
         # Re-applying the held offset and zeroing velocity every frame
         # keeps the bird glued to the mouse the whole time it is aiming.
-        self.bird.body.position = self.bird.initial_position - self.aim_offset
-        self.bird.body.velocity = (0, 0)
-        self.bird.body.angular_velocity = 0.0
+        self.birds[0].body.position = self.birds[0].initial_position - self.aim_offset
+        self.birds[0].body.velocity = (0, 0)
+        self.birds[0].body.angular_velocity = 0.0
 
     def _update_idle(self) -> None:
-        linear_speed = self.bird.body.velocity.length()
-        angular_speed = abs(self.bird.body.angular_velocity)
+        all_resting = True
+
+        for bird in self.birds:
+            linear_speed = bird.body.velocity.length()
+            angular_speed = abs(bird.body.angular_velocity)
+
+            if linear_speed >= IDLE_LINEAR_SPEED_THRESHOLD or angular_speed >= IDLE_ANGULAR_SPEED_THRESHOLD:
+                all_resting = False
+                break
+
+        if all_resting:
+            self.idle_frames += 1
+
+            if self.idle_frames > IDLE_FRAMES_LIMIT:
+                self.flinging = False
+                self.idle_frames = 0
+                for bird in self.birds[1:]:
+                    self.world.destroy_body(bird.body)
+                
+                self.birds = [self.birds[0]]
+                self.birds[0].reset()
+                self.birds[0].randomize_type()
+                self.camera_target.update(self.birds[0].position)
+        else:
+            self.idle_frames = 0
 
         if (
             linear_speed < IDLE_LINEAR_SPEED_THRESHOLD
@@ -175,8 +213,8 @@ class PlayState(BaseState):
             self.idle_frames = 0
 
     def _update_zoom(self, dt: float) -> None:
-        distance = abs(self.bird.position.x - self.bird.initial_position.x)
-        reach = max(1.0, self.bird.initial_position.x)
+        distance = abs(self.birds[0].position.x - self.birds[0].initial_position.x)
+        reach = max(1.0, self.birds[0].initial_position.x)
         target_ratio = max(
             CAMERA_ZOOM_MIN, min(CAMERA_ZOOM_MAX, math.sqrt(distance / reach))
         )
@@ -187,16 +225,21 @@ class PlayState(BaseState):
     def render(self, surface: pygame.Surface) -> None:
         surface.fill(settings.BG_COLOR)
         self.level.render(surface, self.camera)
-        self.bird.render(surface, self.camera)
+
+        for bird in self.birds:
+            bird.render(surface, self.camera)
 
         if self.aiming:
             self._render_pull_line(surface)
 
         render_text(surface, HUD_TEXT, settings.FONTS["small"], 10, 10, (70, 55, 40))
 
+        enemies_msg = f"Aliens: {self.level.enemies_alive} / {self.level.total_enemies}"
+        render_text(surface, enemies_msg, settings.FONTS["medium"], 10, 35, (200, 40, 40))
+
     def _render_pull_line(self, surface: pygame.Surface) -> None:
-        start = self.camera.world_to_screen(self.bird.initial_position)
-        end = self.camera.world_to_screen(self.bird.position)
+        start = self.camera.world_to_screen(self.birds[0].initial_position)
+        end = self.camera.world_to_screen(self.birds[0].position)
         pygame.draw.line(surface, (110, 75, 40), start, end, 3)
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
@@ -204,6 +247,9 @@ class PlayState(BaseState):
             self._on_touch(input_data)
         elif input_id == "touch_motion":
             self._on_touch_motion(input_data)
+        elif input_id == "space" and input_data.pressed:
+            if self.flinging and self.birds[0].can_split:
+                self._trigger_split()
 
     def _mouse_to_virtual(self, position) -> pygame.Vector2:
         scale_x = settings.VIRTUAL_WIDTH / settings.WINDOW_WIDTH
@@ -217,7 +263,7 @@ class PlayState(BaseState):
             self.pressed_position = position
             world_position = pygame.Vector2(self.camera.screen_to_world(position))
 
-            if (world_position - self.bird.position).length() < AIM_GRAB_RADIUS:
+            if (world_position - self.birds[0].position).length() < AIM_GRAB_RADIUS and not self.flinging:
                 self.aiming = True
                 self.aim_offset = pygame.Vector2()
             else:
@@ -231,11 +277,11 @@ class PlayState(BaseState):
             self.panning = False
 
     def _fling(self) -> None:
-        pull = self.bird.initial_position - self.bird.position
+        pull = self.birds[0].initial_position - self.birds[0].position
         # Scaled by the bird's own mass so it cancels out of the
         # resulting delta-v -- see the FLING_IMPULSE_SCALE docstring.
-        scale = FLING_IMPULSE_SCALE * self.bird.mass
-        self.bird.body.apply_impulse(pull.x * scale, pull.y * scale)
+        scale = FLING_IMPULSE_SCALE * self.birds[0].mass
+        self.birds[0].body.apply_impulse(pull.x * scale, pull.y * scale)
         self.flinging = True
         self.idle_frames = 0
 
@@ -264,3 +310,23 @@ class PlayState(BaseState):
                 left - CAMERA_PAN_MARGIN, min(right + CAMERA_PAN_MARGIN, target.x)
             )
             self.camera_target.update(target)
+
+    def _trigger_split(self) -> None:
+        main_bird = self.birds[0]
+        main_bird.can_split = False
+
+        vel_top, vel_bottom = main_bird.calculate_split_velocities(15.0)
+        pos_x, pos_y = main_bird.position
+
+        clone_top = Bird(self.world, pos_x, pos_y)
+        clone_top.body.velocity = vel_top
+        clone_top.image = main_bird.image.copy()
+        clone_top.can_split = False
+
+
+        clone_bottom = Bird(self.world, pos_x, pos_y)
+        clone_bottom.body.velocity = vel_bottom
+        clone_bottom.image = main_bird.image.copy()
+        clone_bottom.can_split = False
+
+        self.birds.extend([clone_top, clone_bottom])

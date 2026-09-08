@@ -38,6 +38,9 @@ class BattleEntity(Entity):
 
         self.current_hp: float = self.hp
 
+        self.base_rest_time: float = definition.get("restTime", 3.0)
+        self.current_rest_time: float = random.uniform(0.0, self.base_rest_time)
+
     def damage(self, amount: float) -> None:
         self.current_hp -= amount
 
